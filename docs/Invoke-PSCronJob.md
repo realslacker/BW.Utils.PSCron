@@ -14,14 +14,14 @@ Runs a cron job.
 
 ### ScriptBlock (Default)
 ```
-Invoke-PSCronJob [-Schedule] <String> [-Definition] <ScriptBlock> [[-ReferenceDate] <DateTime>]
- [-JobName <String>] [-TranscriptPath <String>] [-CallBack <String[]>] [<CommonParameters>]
+Invoke-PSCronJob [-Schedule] <String> -Name <String> [-Definition] <ScriptBlock> [-LogPath <String>] [-Append]
+ [-KeepLog] [-Timeout <Int32>] [-ReferenceDate <DateTime>] [-PassThru] [<CommonParameters>]
 ```
 
 ### File
 ```
-Invoke-PSCronJob [-Schedule] <String> [-Path] <FileInfo> [[-ReferenceDate] <DateTime>] [-JobName <String>]
- [-TranscriptPath <String>] [-CallBack <String[]>] [<CommonParameters>]
+Invoke-PSCronJob [-Schedule] <String> -Name <String> [-Path] <String> [-LogPath <String>] [-Append] [-KeepLog]
+ [-Timeout <Int32>] [-ReferenceDate <DateTime>] [-PassThru] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -60,6 +60,21 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -Name
+The name of the job. Used for logging.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Definition
 A ScriptBlock containing the job code to execute.
 
@@ -79,7 +94,7 @@ Accept wildcard characters: False
 A file containing the job code to execute.
 
 ```yaml
-Type: FileInfo
+Type: String
 Parameter Sets: File
 Aliases:
 
@@ -90,8 +105,39 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -LogPath
+Path to the log file. If no path is specified
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Append
+Append to an existing job log.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -ReferenceDate
-A reference date to use when executing the job. By default uses the current time.
+A reference date to use when executing the job.
+By default uses the current time.
 
 ```yaml
 Type: DateTime
@@ -105,41 +151,11 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -JobName
-The name of the job. Used for logging.
+### -PassThru
+Pass through the CronResult object.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: 'UNDEFINED'
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -TranscriptPath
-Where the transcript should go. Defaults to a temporary file. Note that job transcripts could contain sensitive information and are not automatically cleaned up.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: ( New-TemporaryFile )
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -CallBack
-A call back function or functions to execute after the job has completed.
-
-```yaml
-Type: String[]
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -156,7 +172,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### None
-
 ## OUTPUTS
 
 ### System.Object
