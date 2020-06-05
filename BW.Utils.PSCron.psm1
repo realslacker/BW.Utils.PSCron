@@ -184,22 +184,24 @@ function Invoke-PSCronJob {
 
     }
 
+    # if no LogPath was specified we log to a temporary file
+    if ( -not $LogPath ) {
+
+        $LogPath = New-TemporaryFile
+
+        $RemoveLog = $true
+    
+    } else {
+
+        $RemoveLog = $false
+
+    }
+
     $Init = ''
     $Exit = ''
 
-    $RemoveLog = $false
-
     # if -PassThru is specified we capture some data
     if ( $PassThru ) {
-
-        # if no LogPath was specified we log to a temporary file
-        if ( -not $LogPath ) {
-
-            $LogPath = New-TemporaryFile
-
-            $RemoveLog = $true
-        
-        }
 
         # temporary files for job output
         $ErrorsTemp = New-TemporaryFile
@@ -209,12 +211,13 @@ function Invoke-PSCronJob {
                 '$ProgressPreference="SilentlyContinue"',
                 '$InformationPreference="Continue"',
                 '$WarningPreference="Continue"',
+                '$ErrorActionPreference="Continue"',
                 '' -join "`r`n"
 
         $Exit = '',
-                '} -ErrorVariable "JobErrors" -OutVariable "JobOutput"',
-                "`$JobErrors | ConvertTo-Json -Depth 10 | Out-File -FilePath '$($ErrorsTemp.FullName)'",
+                '} -ErrorVariable "JobErrors" -OutVariable "JobOutput" *>&1',
                 "`$JobOutput | ConvertTo-Json -Depth 10 | Out-File -FilePath '$($OutputTemp.FullName)'",
+                "`$JobErrors | ConvertTo-Json -Depth 10 | Out-File -FilePath '$($ErrorsTemp.FullName)'",
                 '' -join "`r`n"
 
     }
@@ -282,13 +285,6 @@ function Invoke-PSCronJob {
         # remove the temporary files
         $ErrorsTemp, $OutputTemp | Remove-Item -Force -Confirm:$false
 
-        # if the log file was just a temp file we remove that
-        if ( $RemoveLog ) {
-
-            Remove-Item -Path $LogPath -Force -Confirm:$false
-    
-        }
-
         # pass through the results
         [PSCustomObject][ordered]@{
             Name            = $Name
@@ -302,6 +298,13 @@ function Invoke-PSCronJob {
             Output          = $JobOutput
             Errors          = $JobErrors
         }
+
+    }
+
+    # if the log file was just a temp file we remove that
+    if ( $RemoveLog ) {
+
+        Remove-Item -Path $LogPath -Force -Confirm:$false
 
     }
 
