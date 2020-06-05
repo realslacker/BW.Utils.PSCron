@@ -86,6 +86,12 @@ function Get-PSCronNextRun {
 
     )
 
+    if ( $ReferenceDate.Kind -ne 'Utc' ) {
+
+        $ReferenceDate = $ReferenceDate.ToUniversalTime()
+
+    }
+
     $CronSchedule = [Cronos.CronExpression]::Parse( $Schedule )
     
     $NextRun = $CronSchedule.GetNextOccurrence( $ReferenceDate, [System.TimeZoneInfo]::Local, $true )
@@ -119,6 +125,18 @@ function Get-PSCronSchedule {
         $IgnoredArguments
 
     )
+
+    if ( $Start.Kind -ne 'Utc' ) {
+
+        $Start = $Start.ToUniversalTime()
+
+    }
+
+    if ( $End.Kind -ne 'Utc' ) {
+
+        $End = $End.ToUniversalTime()
+
+    }
 
     $CronSchedule = [Cronos.CronExpression]::Parse( $Schedule )
     
@@ -165,6 +183,12 @@ function Invoke-PSCronJob {
         $PassThru
     
     )
+
+    if ( $ReferenceDate.Kind -ne 'Utc' ) {
+
+        $ReferenceDate = $ReferenceDate.ToUniversalTime()
+
+    }
 
     if ( -not( Test-PSCronShouldRun @PSBoundParameters ) ) {
 
