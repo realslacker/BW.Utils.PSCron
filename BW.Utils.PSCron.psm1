@@ -145,9 +145,9 @@ function Invoke-PSCronJob {
         [scriptblock]
         $Definition,
 
-        [Parameter( Mandatory, Position=3, ParameterSetName='File' )]
+        [Parameter( Mandatory, ParameterSetName='File' )]
         [string]
-        $Path,
+        $File,
 
         [string]
         $LogPath,
@@ -231,9 +231,11 @@ function Invoke-PSCronJob {
     $PowerShell.AddScript( $InitScript, $true ) > $null
 
     # if a file is provided we extract the code
-    if ( $Path ) {
+    if ( $File ) {
+
+        $File = Resolve-Path $File | Select-Object -ExpandProperty Path
         
-        $Definition = [scriptblock]::Create( (Get-Content $Path | Out-String ) )
+        $Definition = [scriptblock]::Create( ( Get-Content $File | Out-String ) )
 
     }
     
