@@ -1,4 +1,8 @@
-﻿$__ScriptPath = Split-Path (Get-Variable MyInvocation -Scope Script).Value.Mycommand.Definition -Parent
+﻿using namespace System.Management.Automation
+using namespace System.Collections
+
+$__ScriptPath = Split-Path (Get-Variable MyInvocation -Scope Script).Value.Mycommand.Definition -Parent
+
 Add-Type -Path "$__ScriptPath\lib\Cronos-0.7.0\netstandard2.0\Cronos.dll"
 
 # .ExternalHelp BW.Utils.PSCron-help.xml
@@ -86,7 +90,7 @@ function Get-PSCronNextRun {
     
     $NextRun = $CronSchedule.GetNextOccurrence( $ReferenceDate, [System.TimeZoneInfo]::Local, $true )
 
-    Write-Information ( 'DateTime objects are in UTC. The next run in local time: ' + $NextRun.ToLocalTime() )
+    Write-Verbose ( 'DateTime objects are in UTC. The next run in local time: ' + $NextRun.ToLocalTime() )
 
     return $NextRun
 
@@ -151,6 +155,9 @@ function Invoke-PSCronJob {
         [switch]
         $Append,
 
+        [int]
+        $TimeOut = 60,
+
         [datetime]
         $ReferenceDate = ( Get-PSCronTimestamp ),
 
@@ -166,96 +173,93 @@ function Invoke-PSCronJob {
 
     }
 
-    if ( $PSBoundParameters.Keys -notcontains 'InformationAction' ) { $InformationPreference = 'Continue' }
-
-    # get the job code either from a PS1 file or as the value of the scriptblock
-    if ( $PSCmdlet.ParameterSetName -eq 'File' ) {
-
-        if ( -not( $Code = Get-Content -Path $Path -Raw -ErrorAction SilentlyContinue ) ) {
-
-            Write-Warning ( 'Failed to load job definition from file: {0}' -f $Path )
-            return
-
-        }
-
-    } else {
-
-        $Code = $Definition.ToString()
-
-    }
-
-    # if no LogPath was specified we log to a temporary file
-    if ( -not $LogPath ) {
-
-        $LogPath = New-TemporaryFile
-
-        $RemoveLog = $true
-    
-    } else {
-
-        $RemoveLog = $false
-
-    }
-
-    $Init = ''
-    $Exit = ''
-
-    # if -PassThru is specified we capture some data
-    if ( $PassThru ) {
-
-        # temporary files for job output
-        $ErrorsTemp = New-TemporaryFile
-        $OutputTemp = New-TemporaryFile
-
-        $Init = 'Invoke-Command -ScriptBlock {',
-                '$ProgressPreference="SilentlyContinue"',
-                '$InformationPreference="Continue"',
-                '$WarningPreference="Continue"',
-                '$ErrorActionPreference="Continue"',
-                '' -join "`r`n"
-
-        $Exit = '',
-                '} -ErrorVariable "JobErrors" -OutVariable "JobOutput" *>&1',
-                "`$JobOutput | ConvertTo-Json -Depth 10 | Out-File -FilePath '$($OutputTemp.FullName)'",
-                "`$JobErrors | ConvertTo-Json -Depth 10 | Out-File -FilePath '$($ErrorsTemp.FullName)'",
-                '' -join "`r`n"
-
-    }
-
-    # convert command to byte array
-    $CommandBytes = [System.Text.Encoding]::Unicode.GetBytes( $Init + $Code + $Exit )
-
-    # base64 encode the command
-    $CommandBase64 = [convert]::ToBase64String( $CommandBytes )
+    # variable to hold log
+    [ArrayList]$JobLog = @()
 
     # start timestamp
     $StartTime = (Get-Date).ToUniversalTime()
 
-    # some logging
+    # write status to the screen in case job is run interactively
     ''.PadRight( 80, '-' ),
     ( 'Name:           ' + $Name ),
     ( 'Schedule:       ' + $Schedule ),
     ( 'Reference Date: ' + $ReferenceDate.ToLocalTime() ),
     ( 'Started:        ' + $StartTime.ToLocalTime() ) |
-        Tee-Object -FilePath $LogPath -Append:$Append |
-        ForEach-Object { Write-Information $_ }
+    ForEach-Object { Write-Information $_; $JobLog.Add( $_ ) > $null }
+
+    # create a powershell runspace
+    $PowerShell = [PowerShell]::Create( [RunspaceMode]::NewRunspace )
+
+    # create events for logging
+    Register-ObjectEvent -InputObject $PowerShell.Streams.Information -EventName DataAdded -Action {
+
+        New-Event -SourceIdentifier 'PSCronLog:Info' -MessageData $Event.Sender[-1].MessageData
     
-    ''.PadRight( 80, '-' ),
-    '' | Out-File -FilePath $LogPath -Append 
+    } > $null
+    
+    Register-ObjectEvent -InputObject $PowerShell.Streams.Verbose -EventName DataAdded -Action {
+    
+        New-Event -SourceIdentifier 'PSCronLog:Verbose' -MessageData $Event.Sender[-1].Message
+    
+    } > $null
+    
+    Register-ObjectEvent -InputObject $PowerShell.Streams.Debug -EventName DataAdded -Action {
+    
+        New-Event -SourceIdentifier 'PSCronLog:Debug' -MessageData $Event.Sender[-1].Message
+    
+    } > $null
+    
+    Register-ObjectEvent -InputObject $PowerShell.Streams.Warning -EventName DataAdded -Action {
+    
+        New-Event -SourceIdentifier 'PSCronLog:Warning' -MessageData $Event.Sender[-1].Message
+    
+    } > $null
+    
+    Register-ObjectEvent -InputObject $PowerShell.Streams.Error -EventName DataAdded -Action {
+    
+        New-Event -SourceIdentifier 'PSCronLog:Error' -MessageData ( '{0}: {1}' -f $Event.Sender[-1].FullyQualifiedErrorId, $Event.Sender[-1].Exception.Message )
+        
+    } > $null
+    
+    # add an init script for default output settings
+    [scriptblock]$InitScript = {
+        $ProgressPreference     = 'SilentlyContinue'
+        $InformationPreference  = 'Continue'
+        $WarningPreference      = 'Continue'
+        $ErrorActionPreference  = 'Stop'
+    }
+    $PowerShell.AddScript( $InitScript, $true ) > $null
 
-    # run powershell.exe and output the response to the log file
-    if ( $LogPath ) {
-
-        powershell.exe -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -EncodedCommand $CommandBase64 *>&1 >> "$LogPath"
-
-    } else {
-
-        powershell.exe -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -EncodedCommand $CommandBase64 *>&1 >> $null
+    # if a file is provided we extract the code
+    if ( $Path ) {
+        
+        $Definition = [scriptblock]::Create( (Get-Content $Path | Out-String ) )
 
     }
+    
+    # add the script
+    $PowerShell.AddScript( $Definition, $true ) > $null
 
-    # save the exit code
-    $ExitCode = $LASTEXITCODE
+    # container for output
+    $Output = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+
+    # run the script
+    $Handle = $PowerShell.BeginInvoke( $Output, $Output )
+
+    # wait for completion
+    while ( -not $Handle.IsCompleted ) {
+
+        # kill the job?
+        if ( ( (Get-Date).ToUniversalTime() - $StartTime ).TotalSeconds -gt $TimeOut ) {
+
+            Write-Warning ( '{0} has timed out, the job was stopped after {1} seconds' -f $Name, $TimeOut ) -WarningAction Continue
+            $PowerShell.Stop() > $null
+
+        }
+        
+        Start-Sleep -Milliseconds 100
+    
+    }
 
     # end timestamp
     $EndTime = (Get-Date).ToUniversalTime()
@@ -264,49 +268,54 @@ function Invoke-PSCronJob {
     [timespan]$RunTime = $EndTime - $StartTime
 
     # more logging
-    '',
-    ''.PadRight( 80, '-' ) |
-        Out-File -FilePath $LogPath -Append 
-    
     ( 'Finished:       ' + $StartTime.ToLocalTime() ),
     ( 'Elapsed:        {0} seconds' -f $RunTime.TotalSeconds ),
-    ''.PadRight( 80, '-' ),
-    '' |
-        Tee-Object -FilePath $LogPath -Append |
-        ForEach-Object { Write-Information $_ }
+    ( 'Result:         ' + $PowerShell.InvocationStateInfo.State ),
+    ( 'Errors:         ' + $PowerShell.HadErrors ),
+    ''.PadRight( 80, '-' ) |
+    ForEach-Object { Write-Information $_; $JobLog.Add( $_ ) > $null }
+
+    # dump the job information streams
+    Get-Event -SourceIdentifier 'PSCronLog:*' |
+        ForEach-Object { '[{0:HH:mm:ss}] {1,-7} {2}' -f $_.TimeGenerated, $_.SourceIdentifier.Split(':')[1].ToUpper(), $_.MessageData } |
+        ForEach-Object { $JobLog.Add( $_ ) > $null }
+
+    # if there is a -LogPath specified we output a log
+    if ( $LogPath ) {
+
+        # resolve the log path to a complete path
+        $LogPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath( $LogPath )
+
+        # dump the log header
+        $JobLog | Out-File -FilePath $LogPath -Append:$Append
+
+    }
+
+    # clean up events
+    Get-Event -SourceIdentifier 'PSCronLog:*' | Remove-Event
 
     if ( $PassThru ) {
-
-        # get the results
-        $LogContent = Get-Content -Path $LogPath
-        $JobErrors  = Get-Content -Path $ErrorsTemp | ConvertFrom-Json
-        $JobOutput  = Get-Content -Path $OutputTemp | ConvertFrom-Json
-
-        # remove the temporary files
-        $ErrorsTemp, $OutputTemp | Remove-Item -Force -Confirm:$false
 
         # pass through the results
         [PSCustomObject][ordered]@{
             Name            = $Name
             Source          = $PSCmdlet.ParameterSetName
-            Definition      = $Code
+            Definition      = $Definition.ToString()
             ReferenceDate   = $ReferenceDate
             StartTime       = $StartTime
             EndTime         = $EndTime
             RunTime         = $RunTime
-            Result          = $LogContent
-            Output          = $JobOutput
-            Errors          = $JobErrors
+            State           = $PowerShell.InvocationStateInfo.State
+            Log             = $JobLog | Out-String
+            Output          = $Output
+            Errors          = [object[]]( $PowerShell.Streams.Error | ConvertTo-Json | ConvertFrom-Json )
+            HadErrors       = $PowerShell.HadErrors
         }
 
     }
 
-    # if the log file was just a temp file we remove that
-    if ( $RemoveLog ) {
-
-        Remove-Item -Path $LogPath -Force -Confirm:$false
-
-    }
+    # clean up the runspace
+    $PowerShell.Dispose()
 
 }
 
@@ -376,7 +385,7 @@ function Send-PSCronNotification {
 
     $MessageSplat = @{
         Subject     = $Subject -f $CronResult.Name
-        Body        = '<pre>{0}</pre>' -f ( $CronResult.Result -join "`n" )
+        Body        = '<pre>{0}</pre>' -f ( $CronResult.Log  )
         BodyAsHtml  = $true
     }
 

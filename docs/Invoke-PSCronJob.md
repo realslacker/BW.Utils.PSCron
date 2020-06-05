@@ -106,7 +106,7 @@ Accept wildcard characters: False
 ```
 
 ### -LogPath
-Path to the log file. If no path is specified
+Path where the log should be saved.
 
 ```yaml
 Type: String
@@ -121,10 +121,25 @@ Accept wildcard characters: False
 ```
 
 ### -Append
-Append to an existing job log.
+Append to an existing log.
 
 ```yaml
 Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -TimeOut
+The number of seconds before the job is terminated.
+
+```yaml
+Type: Int32
 Parameter Sets: (All)
 Aliases:
 
