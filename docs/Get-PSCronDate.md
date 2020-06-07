@@ -5,28 +5,29 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-PSCronTimestamp
+# Get-PSCronDate
 
 ## SYNOPSIS
-Return a UTC timestamp rounded to the nearest unit of time.
+Return a custom timestamp rounded to the nearest unit of time.
 
 ## SYNTAX
 
 ```
-Get-PSCronTimestamp [[-Date] <DateTime>] [[-Resolution] <String>] [<CommonParameters>]
+Get-PSCronDate [[-Date] <DateTime>] [[-Resolution] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Return a UTC timestamp rounded to the nearest unit of time. Defaults to the nearest minute.
+Return a custom timestamp rounded to the nearest unit of time. Defaults to the nearest minute.
+Timestamp includes both Utc and Local time.
 
 ## EXAMPLES
 
 ### Example 1
 ```powershell
-PS C:\> Get-PSCronTimestamp
+PS C:\> Get-PSCronDate
 ```
 
-Returns the current UTC timestamp rounded to the nearest minute.
+Returns the current custom timestamp rounded to the nearest minute.
 
 ## PARAMETERS
 

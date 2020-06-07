@@ -6,38 +6,22 @@ $__ScriptPath = Split-Path (Get-Variable MyInvocation -Scope Script).Value.Mycom
 Add-Type -Path "$__ScriptPath\lib\Cronos-0.7.0\netstandard2.0\Cronos.dll"
 
 # .ExternalHelp BW.Utils.PSCron-help.xml
-function Get-PSCronTimestamp {
+function Get-PSCronDate {
 
-    [OutputType( [datetime] )]
+    [OutputType( [PSCronDateTime] )]
     param(
     
         [Parameter(Position=1)]
         [datetime]
-        $Date = ( [datetime]::UtcNow ),
+        $Date = ( Get-Date ),
         
         [Parameter(Position=2)]
-        [ValidateSet( 'Second', 'Minute', 'Hour', 'Day' )]
-        [string]
-        $Resolution = 'Minute'
+        [PSCronTicks]
+        $Resolution = [PSCronTicks]::Minute
         
     )
 
-    if ( $Date.Kind -ne 'Utc' ) {
-    
-        $Date = $Date.ToUniversalTime()
-        
-    }
-
-    $Ticks = switch ( $Resolution ) {
-        
-        'Second' { [timespan]::TicksPerSecond }
-        'Minute' { [timespan]::TicksPerMinute }
-        'Hour'   { [timespan]::TicksPerHour   }
-        'Day'    { [timespan]::TicksPerDay    }
-    
-    }
-
-    return [datetime]::new( $Date.Ticks - ( $Date.Ticks % $Ticks ), $Date.Kind )
+    return [PSCronDateTime]::new( $Date, $Resolution )
 
 }
 
@@ -46,6 +30,7 @@ function Get-PSCronTimestamp {
 function Test-PSCronShouldRun {
 
     [OutputType( [bool] )]
+    [CmdletBinding()]
     param(
 
         [Parameter( Mandatory, Position=1 )]
@@ -53,15 +38,17 @@ function Test-PSCronShouldRun {
         $Schedule,
 
         [Parameter( Position=2 )]
-        [datetime]
-        $ReferenceDate = ( Get-PSCronTimestamp ),
+        [PSCronDateTime]
+        $ReferenceDate = ( Get-PSCronDate ),
 
         [Parameter( ValueFromRemainingArguments, DontShow )]
         $IgnoredArguments
 
     )
 
-    return ( Get-PSCronNextRun @PSBoundParameters ) -eq $ReferenceDate
+    $ThisRun = Get-PSCronNextRun -Schedule $Schedule -ReferenceDate $ReferenceDate -Inclusive
+
+    return $ThisRun -eq $ReferenceDate
 
 }
 
@@ -69,7 +56,7 @@ function Test-PSCronShouldRun {
 # .ExternalHelp BW.Utils.PSCron-help.xml
 function Get-PSCronNextRun {
 
-    [OutputType( [datetime] )]
+    [OutputType( [PSCronDateTime] )]
     [CmdletBinding()]
     param(
 
@@ -78,27 +65,26 @@ function Get-PSCronNextRun {
         $Schedule,
 
         [Parameter( Position=2 )]
-        [datetime]
-        $ReferenceDate = ( Get-PSCronTimestamp ),
+        [PSCronDateTime]
+        $ReferenceDate = ( Get-PSCronDate ),
+
+        [switch]
+        $Inclusive,
 
         [Parameter( ValueFromRemainingArguments, DontShow )]
         $IgnoredArguments
 
     )
 
-    if ( $ReferenceDate.Kind -ne 'Utc' ) {
+    $Offset = $ReferenceDate.Local - $ReferenceDate.Utc
 
-        $ReferenceDate = $ReferenceDate.ToUniversalTime()
-
-    }
+    $ReferenceDate = $ReferenceDate + $Offset
 
     $CronSchedule = [Cronos.CronExpression]::Parse( $Schedule )
     
-    $NextRun = $CronSchedule.GetNextOccurrence( $ReferenceDate, [System.TimeZoneInfo]::Local, $true )
+    [PSCronDateTime]$NextRun = $CronSchedule.GetNextOccurrence( $ReferenceDate.Utc, [System.TimeZoneInfo]::Utc, $Inclusive )
 
-    Write-Verbose ( 'DateTime objects are in UTC. The next run in local time: ' + $NextRun.ToLocalTime() )
-
-    return $NextRun
+    return ( $NextRun - $Offset )
 
 }
 
@@ -106,7 +92,7 @@ function Get-PSCronNextRun {
 # .ExternalHelp BW.Utils.PSCron-help.xml
 function Get-PSCronSchedule {
 
-    [OutputType( [datetime[]] )]
+    [OutputType( [PSCronDateTime[]] )]
     param(
 
         [Parameter(Mandatory, Position=1)]
@@ -114,33 +100,27 @@ function Get-PSCronSchedule {
         $Schedule,
 
         [Parameter(Position=2)]
-        [datetime]
-        $Start = ( Get-PSCronTimestamp -Resolution Day ),
+        [PSCronDateTime]
+        $Start = ( Get-PSCronDate -Resolution Day ),
 
         [Parameter(Position=3)]
-        [datetime]
-        $End = ( Get-PSCronTimestamp -Resolution Day ).AddDays( 1 ),
+        [PSCronDateTime]
+        $End = ( Get-PSCronDate -Date (Get-Date).AddDays( 1 ) -Resolution Day ),
+
+        [switch]
+        $IncludeStart,
+
+        [switch]
+        $IncludeEnd,
 
         [Parameter( ValueFromRemainingArguments, DontShow )]
         $IgnoredArguments
 
     )
 
-    if ( $Start.Kind -ne 'Utc' ) {
-
-        $Start = $Start.ToUniversalTime()
-
-    }
-
-    if ( $End.Kind -ne 'Utc' ) {
-
-        $End = $End.ToUniversalTime()
-
-    }
-
     $CronSchedule = [Cronos.CronExpression]::Parse( $Schedule )
     
-    return $CronSchedule.GetOccurrences( $Start, $End )
+    return [PSCronDateTime[]]$CronSchedule.GetOccurrences( $Start.Utc, $End.Utc, $IncludeStart, $IncludeEnd )
 
 }
 
@@ -176,19 +156,25 @@ function Invoke-PSCronJob {
         [int]
         $TimeOut = 60,
 
-        [datetime]
-        $ReferenceDate = ( Get-PSCronTimestamp ),
+        [ActionPreference]
+        $JobInformationPreference = 'Continue',
+
+        [ActionPreference]
+        $JobDebugPreference = 'SilentlyContinue',
+
+        [ActionPreference]
+        $JobWarningPreference = 'Continue',
+
+        [ActionPreference]
+        $JobErrorActionPreference = 'Stop',
+
+        [PSCronDateTime]
+        $ReferenceDate = ( Get-PSCronDate ),
 
         [switch]
         $PassThru
     
     )
-
-    if ( $ReferenceDate.Kind -ne 'Utc' ) {
-
-        $ReferenceDate = $ReferenceDate.ToUniversalTime()
-
-    }
 
     if ( -not( Test-PSCronShouldRun @PSBoundParameters ) ) {
 
@@ -201,26 +187,26 @@ function Invoke-PSCronJob {
     [ArrayList]$JobLog = @()
 
     # start timestamp
-    $StartTime = (Get-Date).ToUniversalTime()
+    $StartTime = Get-Date
 
     # write status to the screen in case job is run interactively
     ''.PadRight( 80, '-' ),
     ( 'Name:           ' + $Name ),
     ( 'Schedule:       ' + $Schedule ),
-    ( 'Reference Date: ' + $ReferenceDate.ToLocalTime() ),
-    ( 'Started:        ' + $StartTime.ToLocalTime() ) |
+    ( 'Reference Date: ' + $ReferenceDate ),
+    ( 'Started:        ' + $StartTime ) |
     ForEach-Object { Write-Information $_; $JobLog.Add( $_ ) > $null }
 
     # create a powershell runspace
     $PowerShell = [PowerShell]::Create( [RunspaceMode]::NewRunspace )
 
-    # create events for logging
+    # create events for logging streams
     Register-ObjectEvent -InputObject $PowerShell.Streams.Information -EventName DataAdded -Action {
-
+    
         New-Event -SourceIdentifier 'PSCronLog:Info' -MessageData $Event.Sender[-1].MessageData
     
     } > $null
-    
+
     Register-ObjectEvent -InputObject $PowerShell.Streams.Verbose -EventName DataAdded -Action {
     
         New-Event -SourceIdentifier 'PSCronLog:Verbose' -MessageData $Event.Sender[-1].Message
@@ -246,12 +232,14 @@ function Invoke-PSCronJob {
     } > $null
     
     # add an init script for default output settings
-    [scriptblock]$InitScript = {
-        $ProgressPreference     = 'SilentlyContinue'
-        $InformationPreference  = 'Continue'
-        $WarningPreference      = 'Continue'
-        $ErrorActionPreference  = 'Stop'
-    }
+    $StreamPreferences = @(
+        "`$Global:ProgressPreference     = 'SilentlyContinue'"
+        "`$Global:InformationPreference  = '$JobInformationPreference'"
+        "`$Global:DebugPreference        = '$JobDebugPreference'"
+        "`$Global:WarningPreference      = '$JobWarningPreference'"
+        "`$Global:ErrorActionPreference  = '$JobErrorActionPreference'"
+    ) | Out-String
+    $InitScript = [scriptblock]::Create( $StreamPreferences )
     $PowerShell.AddScript( $InitScript, $true ) > $null
 
     # if a file is provided we extract the code
@@ -275,36 +263,70 @@ function Invoke-PSCronJob {
     # wait for completion
     while ( -not $Handle.IsCompleted ) {
 
-        # kill the job?
-        if ( ( (Get-Date).ToUniversalTime() - $StartTime ).TotalSeconds -gt $TimeOut ) {
+        Start-Sleep -Milliseconds 500
 
-            Write-Warning ( '{0} has timed out, the job was stopped after {1} seconds' -f $Name, $TimeOut ) -WarningAction Continue
+        # kill the job?
+        if ( ( (Get-Date) - $StartTime ).TotalSeconds -gt $TimeOut ) {
+
+            Write-Warning ( '{0} has timed out, the job was stopped after {1} seconds' -f $Name, $TimeOut )
+            $PowerShell.RunSpace.Dispose() > $null
             $PowerShell.Stop() > $null
 
         }
-        
-        Start-Sleep -Milliseconds 100
     
     }
 
     # end timestamp
-    $EndTime = (Get-Date).ToUniversalTime()
+    $EndTime = Get-Date
 
     # calculate the job runtime
     [timespan]$RunTime = $EndTime - $StartTime
 
     # more logging
-    ( 'Finished:       ' + $StartTime.ToLocalTime() ),
+    ( 'Finished:       ' + $EndTime ),
     ( 'Elapsed:        {0} seconds' -f $RunTime.TotalSeconds ),
     ( 'Result:         ' + $PowerShell.InvocationStateInfo.State ),
     ( 'Errors:         ' + $PowerShell.HadErrors ),
     ''.PadRight( 80, '-' ) |
     ForEach-Object { Write-Information $_; $JobLog.Add( $_ ) > $null }
 
-    # dump the job information streams
+    # dump the job information streams collected by the events above
+    $InfoStreamIndex = 0
+    [ArrayList]$Streams = @()
     Get-Event -SourceIdentifier 'PSCronLog:*' |
-        ForEach-Object { '[{0:HH:mm:ss}] {1,-7} {2}' -f $_.TimeGenerated, $_.SourceIdentifier.Split(':')[1].ToUpper(), $_.MessageData } |
-        ForEach-Object { $JobLog.Add( $_ ) > $null }
+        Select-Object TimeGenerated, @{N='OutputStream';E={$_.SourceIdentifier.Split(':')[1].ToUpper()}}, MessageData |
+        ForEach-Object {
+            
+            # do some hacky shit since the info events contain all the output
+            # for some reason
+            if ( $_.OutputStream -eq 'INFO' ) {
+
+                # get the corresponding info object from the RunSpace
+                $RunSpaceInfo = $PowerShell.Streams.Information[ $InfoStreamIndex ]
+
+                # replace the MessageData
+                $_.MessageData = $RunSpaceInfo.MessageData
+
+                # if the $RunSpaceInfo has the 'PSHOST' tag it's from Write-Host,
+                # change the OutputStream to 'HOST'
+                if ( $RunSpaceInfo.Tags -contains 'PSHOST' ) {
+
+                    $_.OutputStream = 'HOST'
+
+                }
+
+                # increment the counter
+                $InfoStreamIndex ++
+
+            }
+        
+            # format for the log
+            $LogLine = '[{0:HH:mm:ss}] {1,-7} {2}' -f $_.TimeGenerated, $_.OutputStream, $_.MessageData
+
+            $Streams.Add( $_ ) > $null
+            $JobLog.Add( $LogLine ) > $null
+        
+        }
 
     # if there is a -LogPath specified we output a log
     if ( $LogPath ) {
@@ -324,24 +346,27 @@ function Invoke-PSCronJob {
 
         # pass through the results
         [PSCustomObject][ordered]@{
-            Name            = $Name
-            Source          = $PSCmdlet.ParameterSetName
-            Definition      = $Definition.ToString()
-            ReferenceDate   = $ReferenceDate
-            StartTime       = $StartTime
-            EndTime         = $EndTime
-            RunTime         = $RunTime
-            State           = $PowerShell.InvocationStateInfo.State
-            Log             = $JobLog | Out-String
-            Output          = $Output
-            Errors          = [object[]]( $PowerShell.Streams.Error | ConvertTo-Json | ConvertFrom-Json )
-            HadErrors       = $PowerShell.HadErrors
+            Name                = $Name
+            Source              = $PSCmdlet.ParameterSetName
+            Definition          = $Definition.ToString()
+            ReferenceDate       = $ReferenceDate
+            StartTime           = $StartTime
+            EndTime             = $EndTime
+            RunTime             = $RunTime
+            State               = $PowerShell.InvocationStateInfo.State
+            Log                 = $JobLog | Out-String
+            Output              = $Output
+            Streams             = $Streams
+            Errors              = [object[]]( $PowerShell.Streams.Error | ConvertTo-Json | ConvertFrom-Json )
+            TerminatingError    = $( if ( $PowerShell.InvocationStateInfo.Reason -is [ActionPreferenceStopException] -or $PowerShell.InvocationStateInfo.Reason -is [System.Management.Automation.PipelineStoppedException] ) { $PowerShell.InvocationStateInfo.Reason } )
+            HadErrors           = $PowerShell.HadErrors
         }
 
     }
 
     # clean up the runspace
-    $PowerShell.Dispose()
+    $PowerShell.RunSpace.Dispose() > $null
+    $PowerShell.Dispose() > $null
 
 }
 

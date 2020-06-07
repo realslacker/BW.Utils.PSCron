@@ -13,7 +13,8 @@ Get next run for a given cron schedule.
 ## SYNTAX
 
 ```
-Get-PSCronNextRun [-Schedule] <String> [[-ReferenceDate] <DateTime>] [<CommonParameters>]
+Get-PSCronNextRun [-Schedule] <String> [[-ReferenceDate] <PSCronDateTime>] [-Inclusive]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -56,13 +57,28 @@ Accept wildcard characters: False
 A datetime object including from which all operations will be relative to.
 
 ```yaml
-Type: DateTime
+Type: PSCronDateTime
 Parameter Sets: (All)
 Aliases:
 
 Required: False
 Position: 2
-Default value: ( Get-PSCronTimestamp )
+Default value: ( Get-PSCronDate )
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Inclusive
+If included the return value could include the current time.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

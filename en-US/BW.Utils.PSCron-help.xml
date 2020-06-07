@@ -2,256 +2,19 @@
 <helpItems schema="maml" xmlns="http://msh">
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
     <command:details>
-      <command:name>Get-PSCronNextRun</command:name>
+      <command:name>Get-PSCronDate</command:name>
       <command:verb>Get</command:verb>
-      <command:noun>PSCronNextRun</command:noun>
+      <command:noun>PSCronDate</command:noun>
       <maml:description>
-        <maml:para>Get next run for a given cron schedule.</maml:para>
+        <maml:para>Return a custom timestamp rounded to the nearest unit of time.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Get next run for a given cron schedule.</maml:para>
+      <maml:para>Return a custom timestamp rounded to the nearest unit of time. Defaults to the nearest minute. Timestamp includes both Utc and Local time.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem>
-        <maml:name>Get-PSCronNextRun</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
-          <maml:name>Schedule</maml:name>
-          <maml:Description>
-            <maml:para>The cron schedule to parse.</maml:para>
-          </maml:Description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
-          <maml:name>ReferenceDate</maml:name>
-          <maml:Description>
-            <maml:para>A datetime object including from which all operations will be relative to.</maml:para>
-          </maml:Description>
-          <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
-          <dev:type>
-            <maml:name>DateTime</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>( Get-PSCronTimestamp )</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
-        <maml:name>Schedule</maml:name>
-        <maml:Description>
-          <maml:para>The cron schedule to parse.</maml:para>
-        </maml:Description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
-        <maml:name>ReferenceDate</maml:name>
-        <maml:Description>
-          <maml:para>A datetime object including from which all operations will be relative to.</maml:para>
-        </maml:Description>
-        <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
-        <dev:type>
-          <maml:name>DateTime</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>( Get-PSCronTimestamp )</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name>System.Object</maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name>System.DateTime</maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>PS C:\&gt; Get-PSCronNextRun '*/15 * * * *'</dev:code>
-        <dev:remarks>
-          <maml:para>Returns the next quarter hour.</maml:para>
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>-------------------------- Example 2 --------------------------</maml:title>
-        <dev:code>PS C:\&gt; Get-PSCronNextRun '15 1 * * *' -ReferenceDate (Get-Date -Date '1:00 AM')</dev:code>
-        <dev:remarks>
-          <maml:para>Returns 1:15 AM on the same day.</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks />
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Get-PSCronSchedule</command:name>
-      <command:verb>Get</command:verb>
-      <command:noun>PSCronSchedule</command:noun>
-      <maml:description>
-        <maml:para>Parse a given cron schedule.</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>Parse a given cron schedule. Returns all execution times in the time range. The default range is the next 24 hours.</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Get-PSCronSchedule</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
-          <maml:name>Schedule</maml:name>
-          <maml:Description>
-            <maml:para>The cron schedule to parse.</maml:para>
-          </maml:Description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
-          <maml:name>Start</maml:name>
-          <maml:Description>
-            <maml:para>A beginning datetime object.</maml:para>
-          </maml:Description>
-          <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
-          <dev:type>
-            <maml:name>DateTime</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>( Get-PSCronTimestamp -Resolution Day )</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
-          <maml:name>End</maml:name>
-          <maml:Description>
-            <maml:para>An ending datetime object.</maml:para>
-          </maml:Description>
-          <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
-          <dev:type>
-            <maml:name>DateTime</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>( Get-PSCronTimestamp -Resolution Day ).AddDays( 1 )</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
-        <maml:name>Schedule</maml:name>
-        <maml:Description>
-          <maml:para>The cron schedule to parse.</maml:para>
-        </maml:Description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
-        <maml:name>Start</maml:name>
-        <maml:Description>
-          <maml:para>A beginning datetime object.</maml:para>
-        </maml:Description>
-        <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
-        <dev:type>
-          <maml:name>DateTime</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>( Get-PSCronTimestamp -Resolution Day )</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
-        <maml:name>End</maml:name>
-        <maml:Description>
-          <maml:para>An ending datetime object.</maml:para>
-        </maml:Description>
-        <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
-        <dev:type>
-          <maml:name>DateTime</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>( Get-PSCronTimestamp -Resolution Day ).AddDays( 1 )</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name>System.Object</maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name>System.DateTime[]</maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>PS C:\&gt; Get-PSCronSchedule '*/15 1 * * *'</dev:code>
-        <dev:remarks>
-          <maml:para>Will return 1:00, 1:15, 1:30, 1:45.</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks />
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Get-PSCronTimestamp</command:name>
-      <command:verb>Get</command:verb>
-      <command:noun>PSCronTimestamp</command:noun>
-      <maml:description>
-        <maml:para>Return a UTC timestamp rounded to the nearest unit of time.</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>Return a UTC timestamp rounded to the nearest unit of time. Defaults to the nearest minute.</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Get-PSCronTimestamp</maml:name>
+        <maml:name>Get-PSCronDate</maml:name>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
           <maml:name>Date</maml:name>
           <maml:Description>
@@ -338,9 +101,315 @@
     <command:examples>
       <command:example>
         <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>PS C:\&gt; Get-PSCronTimestamp</dev:code>
+        <dev:code>PS C:\&gt; Get-PSCronDate</dev:code>
         <dev:remarks>
-          <maml:para>Returns the current UTC timestamp rounded to the nearest minute.</maml:para>
+          <maml:para>Returns the current custom timestamp rounded to the nearest minute.</maml:para>
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks />
+  </command:command>
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
+      <command:name>Get-PSCronNextRun</command:name>
+      <command:verb>Get</command:verb>
+      <command:noun>PSCronNextRun</command:noun>
+      <maml:description>
+        <maml:para>Get next run for a given cron schedule.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>Get next run for a given cron schedule.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-PSCronNextRun</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+          <maml:name>Schedule</maml:name>
+          <maml:Description>
+            <maml:para>The cron schedule to parse.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+          <maml:name>ReferenceDate</maml:name>
+          <maml:Description>
+            <maml:para>A datetime object including from which all operations will be relative to.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">PSCronDateTime</command:parameterValue>
+          <dev:type>
+            <maml:name>PSCronDateTime</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Inclusive</maml:name>
+          <maml:Description>
+            <maml:para>If included the return value could include the current time.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+        <maml:name>Schedule</maml:name>
+        <maml:Description>
+          <maml:para>The cron schedule to parse.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+        <maml:name>ReferenceDate</maml:name>
+        <maml:Description>
+          <maml:para>A datetime object including from which all operations will be relative to.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">PSCronDateTime</command:parameterValue>
+        <dev:type>
+          <maml:name>PSCronDateTime</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Inclusive</maml:name>
+        <maml:Description>
+          <maml:para>If included the return value could include the current time.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>System.Object</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para></maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.DateTime</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para></maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para></maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
+        <dev:code>PS C:\&gt; Get-PSCronNextRun '*/15 * * * *'</dev:code>
+        <dev:remarks>
+          <maml:para>Returns the next quarter hour.</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>-------------------------- Example 2 --------------------------</maml:title>
+        <dev:code>PS C:\&gt; Get-PSCronNextRun '15 1 * * *' -ReferenceDate (Get-Date -Date '1:00 AM')</dev:code>
+        <dev:remarks>
+          <maml:para>Returns 1:15 AM on the same day.</maml:para>
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks />
+  </command:command>
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
+      <command:name>Get-PSCronSchedule</command:name>
+      <command:verb>Get</command:verb>
+      <command:noun>PSCronSchedule</command:noun>
+      <maml:description>
+        <maml:para>Parse a given cron schedule.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>Parse a given cron schedule. Returns all execution times in the time range. The default range is the next 24 hours.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-PSCronSchedule</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+          <maml:name>Schedule</maml:name>
+          <maml:Description>
+            <maml:para>The cron schedule to parse.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+          <maml:name>Start</maml:name>
+          <maml:Description>
+            <maml:para>A beginning datetime object.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
+          <dev:type>
+            <maml:name>DateTime</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>( Get-PSCronDate -Resolution Day )</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
+          <maml:name>End</maml:name>
+          <maml:Description>
+            <maml:para>An ending datetime object.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
+          <dev:type>
+            <maml:name>DateTime</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>( Get-PSCronDate -Resolution Day ).AddDays( 1 )</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>IncludeStart</maml:name>
+          <maml:Description>
+            <maml:para>If included the return value could include the start time.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>IncludeEnd</maml:name>
+          <maml:Description>
+            <maml:para>If included the return value could include the end time.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+        <maml:name>Schedule</maml:name>
+        <maml:Description>
+          <maml:para>The cron schedule to parse.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+        <maml:name>Start</maml:name>
+        <maml:Description>
+          <maml:para>A beginning datetime object.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
+        <dev:type>
+          <maml:name>DateTime</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>( Get-PSCronDate -Resolution Day )</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
+        <maml:name>End</maml:name>
+        <maml:Description>
+          <maml:para>An ending datetime object.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
+        <dev:type>
+          <maml:name>DateTime</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>( Get-PSCronDate -Resolution Day ).AddDays( 1 )</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>IncludeStart</maml:name>
+        <maml:Description>
+          <maml:para>If included the return value could include the start time.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>IncludeEnd</maml:name>
+        <maml:Description>
+          <maml:para>If included the return value could include the end time.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>System.Object</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para></maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.DateTime[]</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para></maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para></maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
+        <dev:code>PS C:\&gt; Get-PSCronSchedule '*/15 1 * * *'</dev:code>
+        <dev:remarks>
+          <maml:para>Will return 1:00, 1:15, 1:30, 1:45.</maml:para>
         </dev:remarks>
       </command:example>
     </command:examples>
@@ -442,7 +511,55 @@
             <maml:name>DateTime</maml:name>
             <maml:uri />
           </dev:type>
-          <dev:defaultValue>( Get-PSCronTimestamp )</dev:defaultValue>
+          <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>JobDebugPreference</maml:name>
+          <maml:Description>
+            <maml:para>Sets the $DebugPreference in the job environment.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+          <dev:type>
+            <maml:name>ActionPreference</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>JobErrorActionPreference</maml:name>
+          <maml:Description>
+            <maml:para>Sets the $ErrorActionPreference in the job environment.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+          <dev:type>
+            <maml:name>ActionPreference</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>JobInformationPreference</maml:name>
+          <maml:Description>
+            <maml:para>Sets the $InformationPreference in the job environment.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+          <dev:type>
+            <maml:name>ActionPreference</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>JobWarningPreference</maml:name>
+          <maml:Description>
+            <maml:para>Sets the $WarningPreference in the job environment.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+          <dev:type>
+            <maml:name>ActionPreference</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>PassThru</maml:name>
@@ -471,7 +588,7 @@
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
-          <maml:name>Path</maml:name>
+          <maml:name>File</maml:name>
           <maml:Description>
             <maml:para>A file containing the job code to execute.</maml:para>
           </maml:Description>
@@ -539,7 +656,55 @@
             <maml:name>DateTime</maml:name>
             <maml:uri />
           </dev:type>
-          <dev:defaultValue>( Get-PSCronTimestamp )</dev:defaultValue>
+          <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>JobDebugPreference</maml:name>
+          <maml:Description>
+            <maml:para>Sets the $DebugPreference in the job environment.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+          <dev:type>
+            <maml:name>ActionPreference</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>JobErrorActionPreference</maml:name>
+          <maml:Description>
+            <maml:para>Sets the $ErrorActionPreference in the job environment.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+          <dev:type>
+            <maml:name>ActionPreference</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>JobInformationPreference</maml:name>
+          <maml:Description>
+            <maml:para>Sets the $InformationPreference in the job environment.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+          <dev:type>
+            <maml:name>ActionPreference</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>JobWarningPreference</maml:name>
+          <maml:Description>
+            <maml:para>Sets the $WarningPreference in the job environment.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+          <dev:type>
+            <maml:name>ActionPreference</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>PassThru</maml:name>
@@ -592,7 +757,7 @@
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
-        <maml:name>Path</maml:name>
+        <maml:name>File</maml:name>
         <maml:Description>
           <maml:para>A file containing the job code to execute.</maml:para>
         </maml:Description>
@@ -649,7 +814,55 @@
           <maml:name>DateTime</maml:name>
           <maml:uri />
         </dev:type>
-        <dev:defaultValue>( Get-PSCronTimestamp )</dev:defaultValue>
+        <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>JobDebugPreference</maml:name>
+        <maml:Description>
+          <maml:para>Sets the $DebugPreference in the job environment.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+        <dev:type>
+          <maml:name>ActionPreference</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>JobErrorActionPreference</maml:name>
+        <maml:Description>
+          <maml:para>Sets the $ErrorActionPreference in the job environment.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+        <dev:type>
+          <maml:name>ActionPreference</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>JobInformationPreference</maml:name>
+        <maml:Description>
+          <maml:para>Sets the $InformationPreference in the job environment.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+        <dev:type>
+          <maml:name>ActionPreference</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>JobWarningPreference</maml:name>
+        <maml:Description>
+          <maml:para>Sets the $WarningPreference in the job environment.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">ActionPreference</command:parameterValue>
+        <dev:type>
+          <maml:name>ActionPreference</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>PassThru</maml:name>
@@ -699,9 +912,9 @@
       </command:example>
       <command:example>
         <maml:title>-------------------------- Example 2 --------------------------</maml:title>
-        <dev:code>PS C:\&gt; Invoke-PSCronJob '* * * * *' { return $true } -JobName 'Test Job' -CallBack '__SendEmail'</dev:code>
+        <dev:code>PS C:\&gt; Invoke-PSCronJob '* * * * *' { return $true } -JobName 'Test Job' -PassThru</dev:code>
         <dev:remarks>
-          <maml:para>Runs a job called 'Test Job' that returns $true every minute, then executes a function named '__SendEmail' with the job details.</maml:para>
+          <maml:para>Runs a job called 'Test Job' that returns $true every minute, then puts the job result on the pipeline.</maml:para>
         </dev:remarks>
       </command:example>
     </command:examples>
@@ -1098,12 +1311,12 @@
           <maml:Description>
             <maml:para>A reference date to use when testing if the schedule should run.</maml:para>
           </maml:Description>
-          <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
+          <command:parameterValue required="true" variableLength="false">PSCronDateTime</command:parameterValue>
           <dev:type>
-            <maml:name>DateTime</maml:name>
+            <maml:name>PSCronDateTime</maml:name>
             <maml:uri />
           </dev:type>
-          <dev:defaultValue>( Get-PSCronTimestamp )</dev:defaultValue>
+          <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
         </command:parameter>
       </command:syntaxItem>
     </command:syntax>
@@ -1125,12 +1338,12 @@
         <maml:Description>
           <maml:para>A reference date to use when testing if the schedule should run.</maml:para>
         </maml:Description>
-        <command:parameterValue required="true" variableLength="false">DateTime</command:parameterValue>
+        <command:parameterValue required="true" variableLength="false">PSCronDateTime</command:parameterValue>
         <dev:type>
-          <maml:name>DateTime</maml:name>
+          <maml:name>PSCronDateTime</maml:name>
           <maml:uri />
         </dev:type>
-        <dev:defaultValue>( Get-PSCronTimestamp )</dev:defaultValue>
+        <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
       </command:parameter>
     </command:parameters>
     <command:inputTypes>
@@ -1161,7 +1374,7 @@
     <command:examples>
       <command:example>
         <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>PS C:\&gt; Test-CronShouldRun '* * * * *' -ReferenceDate (Get-PSCronTimestamp)</dev:code>
+        <dev:code>PS C:\&gt; Test-CronShouldRun '* * * * *' -ReferenceDate (Get-PSCronDate)</dev:code>
         <dev:remarks>
           <maml:para>Returns $true since this job runs every minute.</maml:para>
         </dev:remarks>

@@ -15,13 +15,17 @@ Runs a cron job.
 ### ScriptBlock (Default)
 ```
 Invoke-PSCronJob [-Schedule] <String> -Name <String> [-Definition] <ScriptBlock> [-LogPath <String>] [-Append]
- [-KeepLog] [-Timeout <Int32>] [-ReferenceDate <DateTime>] [-PassThru] [<CommonParameters>]
+ [-Timeout <Int32>] [-JobInformationPreference <ActionPreference>] [-JobDebugPreference <ActionPreference>]
+ [-JobWarningPreference <ActionPreference>] [-JobErrorPreference <ActionPreference>]
+ [-ReferenceDate <PSCronDateTime>] [-PassThru] [<CommonParameters>]
 ```
 
 ### File
 ```
-Invoke-PSCronJob [-Schedule] <String> -Name <String> [-Path] <String> [-LogPath <String>] [-Append] [-KeepLog]
- [-Timeout <Int32>] [-ReferenceDate <DateTime>] [-PassThru] [<CommonParameters>]
+Invoke-PSCronJob [-Schedule] <String> -Name <String> -File <String> [-LogPath <String>] [-Append]
+ [-TimeOut <Int32>] [-JobInformationPreference <ActionPreference>] [-JobDebugPreference <ActionPreference>]
+ [-JobWarningPreference <ActionPreference>] [-JobErrorPreference <ActionPreference>]
+ [-ReferenceDate <PSCronDateTime>] [-PassThru] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -38,10 +42,10 @@ Runs a job called 'Test Job' that returns $true every minute.
 
 ### Example 2
 ```powershell
-PS C:\> Invoke-PSCronJob '* * * * *' { return $true } -JobName 'Test Job' -CallBack '__SendEmail'
+PS C:\> Invoke-PSCronJob '* * * * *' { return $true } -JobName 'Test Job' -PassThru
 ```
 
-Runs a job called 'Test Job' that returns $true every minute, then executes a function named '__SendEmail' with the job details.
+Runs a job called 'Test Job' that returns $true every minute, then puts the job result on the pipeline.
 
 ## PARAMETERS
 
@@ -90,7 +94,7 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Path
+### -File
 A file containing the job code to execute.
 
 ```yaml
@@ -161,7 +165,67 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: ( Get-PSCronTimestamp )
+Default value: ( Get-PSCronDate )
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -JobDebugPreference
+Sets the $DebugPreference in the job environment.
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -JobErrorActionPreference
+Sets the $ErrorActionPreference in the job environment.
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -JobInformationPreference
+Sets the $InformationPreference in the job environment.
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -JobWarningPreference
+Sets the $WarningPreference in the job environment.
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

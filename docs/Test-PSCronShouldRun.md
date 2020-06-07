@@ -13,7 +13,7 @@ Checks based on the schedule and reference date if a job should run.
 ## SYNTAX
 
 ```
-Test-PSCronShouldRun [-Schedule] <String> [[-ReferenceDate] <DateTime>] [<CommonParameters>]
+Test-PSCronShouldRun [-Schedule] <String> [[-ReferenceDate] <PSCronDateTime>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -23,7 +23,7 @@ Checks based on the schedule and reference date if a job should run.
 
 ### Example 1
 ```powershell
-PS C:\> Test-CronShouldRun '* * * * *' -ReferenceDate (Get-PSCronTimestamp)
+PS C:\> Test-CronShouldRun '* * * * *' -ReferenceDate (Get-PSCronDate)
 ```
 
 Returns $true since this job runs every minute.
@@ -49,13 +49,13 @@ Accept wildcard characters: False
 A reference date to use when testing if the schedule should run.
 
 ```yaml
-Type: DateTime
+Type: PSCronDateTime
 Parameter Sets: (All)
 Aliases:
 
 Required: False
 Position: 2
-Default value: ( Get-PSCronTimestamp )
+Default value: ( Get-PSCronDate )
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
