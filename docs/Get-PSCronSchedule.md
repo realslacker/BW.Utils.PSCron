@@ -13,11 +13,13 @@ Parse a given cron schedule.
 ## SYNTAX
 
 ```
-Get-PSCronSchedule [-Schedule] <String> [[-Start] <DateTime>] [[-End] <DateTime>] [<CommonParameters>]
+Get-PSCronSchedule [-Schedule] <String> [[-Start] <PSCronDateTime>] [[-End] <PSCronDateTime>] [-IncludeStart] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Parse a given cron schedule. Returns all execution times in the time range. The default range is the next 24 hours.
+Parse a given cron schedule.
+Returns all execution times in the time range.
+The default range is the next 24 hours.
 
 ## EXAMPLES
 
@@ -55,7 +57,7 @@ Aliases:
 
 Required: False
 Position: 2
-Default value: ( Get-PSCronTimestamp -Resolution Day )
+Default value: ( Get-PSCronDate -Resolution Day )
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -70,7 +72,37 @@ Aliases:
 
 Required: False
 Position: 3
-Default value: ( Get-PSCronTimestamp -Resolution Day ).AddDays( 1 )
+Default value: ( Get-PSCronDate -Resolution Day ).AddDays( 1 )
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeStart
+If included the return value could include the start time.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeEnd
+If included the return value could include the end time.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
