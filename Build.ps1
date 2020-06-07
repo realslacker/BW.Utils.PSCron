@@ -20,6 +20,7 @@ $FilesToInclude = @(
     '{0}.psd1'
     '{0}.psm1'
     'lib'
+    'classes'
 )
 
 # module variables
