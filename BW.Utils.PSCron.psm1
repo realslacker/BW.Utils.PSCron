@@ -171,6 +171,9 @@ function Invoke-PSCronJob {
         [PSCronDateTime]
         $ReferenceDate = ( Get-PSCronDate ),
 
+        [string]
+        $Description,
+
         [switch]
         $PassThru
     
@@ -192,6 +195,7 @@ function Invoke-PSCronJob {
     # write status to the screen in case job is run interactively
     ''.PadRight( 80, '-' ),
     ( 'Name:           ' + $Name ),
+    ( 'Description:    ' + $Description ),
     ( 'Schedule:       ' + $Schedule ),
     ( 'Reference Date: ' + $ReferenceDate ),
     ( 'Started:        ' + $StartTime ) |
@@ -347,6 +351,7 @@ function Invoke-PSCronJob {
         # pass through the results
         [PSCustomObject][ordered]@{
             Name                = $Name
+            Description         = $Description
             Source              = $PSCmdlet.ParameterSetName
             Definition          = $Definition.ToString()
             ReferenceDate       = $ReferenceDate
