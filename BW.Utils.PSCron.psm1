@@ -382,7 +382,7 @@ function Send-PSCronNotification {
     param(
 
         [Parameter( Mandatory, ValueFromPipeline )]
-        [object]
+        [object[]]
         $CronResult,
 
         [Parameter( Mandatory )]
@@ -439,18 +439,30 @@ function Send-PSCronNotification {
         
     )
 
-    $MessageSplat = @{
-        Subject     = $Subject -f $CronResult.Name
-        Body        = '<pre>{0}</pre>' -f ( $CronResult.Log  )
-        BodyAsHtml  = $true
+    begin {
+
+        $SendOptions = @{
+            BodyAsHtml = $true
+        }
+        'To', 'Cc', 'Bcc', 'From', 'SmtpServer', 'Priority', 'DeliveryNotificationOption', 'Credential', 'Port' |
+            Where-Object { $_ -in $PSBoundParameters.Keys } |
+            ForEach-Object { $SendOptions.$_ = $PSBoundParameters.$_ }
+
     }
 
-    'To', 'Cc', 'Bcc', 'From', 'SmtpServer', 'Priority', 'DeliveryNotificationOption', 'Credential', 'Port' |
-        Where-Object { $_ -in $PSBoundParameters.Keys } |
-        ForEach-Object { $MessageSplat.$_ = $PSBoundParameters.$_ }
+    process {
 
-    Send-MailMessage @MessageSplat
+        $CronResult | ForEach-Object {
 
-    if ( $PassThru ) { $CronResult }
+            Send-MailMessage `
+                -Subject ( $Subject -f $_.Name ) `
+                -Body ( '<pre>{0}</pre>' -f ( $_.Log  ) ) `
+                @SendOptions
+
+            if ( $PassThru ) { $_ }
+
+        }
+
+    }
     
 }
