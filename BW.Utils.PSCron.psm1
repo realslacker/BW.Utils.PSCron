@@ -363,7 +363,7 @@ function Invoke-PSCronJob {
             Output              = $Output
             Streams             = $Streams
             Errors              = [object[]]( $PowerShell.Streams.Error | ConvertTo-Json | ConvertFrom-Json )
-            TerminatingError    = $( if ( $PowerShell.InvocationStateInfo.Reason -is [ActionPreferenceStopException] -or $PowerShell.InvocationStateInfo.Reason -is [System.Management.Automation.PipelineStoppedException] ) { $PowerShell.InvocationStateInfo.Reason } )
+            TerminatingError    = $( if ( $PowerShell.InvocationStateInfo.Reason -is [Exception] ) { $PowerShell.InvocationStateInfo.Reason } )
             HadErrors           = $PowerShell.HadErrors
         }
 
