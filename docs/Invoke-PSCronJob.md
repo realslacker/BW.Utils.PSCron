@@ -230,6 +230,22 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -Description
+A description to include in the job log and pass 
+down the pipeline.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -PassThru
 Pass through the CronResult object.
 
