@@ -141,9 +141,9 @@ Describe 'Get-PSCronSchedule' {
             { Get-PSCronSchedule '0 0 * * *' -FakeArgument } | Should -Not -Throw
         }
         It 'should return a collection of [PSCronDateTime] objects' {
-            $Schedule = Get-PSCronSchedule -Schedule '0 * * * *'
-            $Schedule | Should -HaveCount 25
-            $Schedule | ?{ $_ -is [PSCronDateTime] } | Should -HaveCount 25
+            $Schedule = Get-PSCronSchedule -Schedule '0 */4 * * *'
+            $Schedule | Should -HaveCount 6
+            $Schedule | Where-Object { $_ -is [PSCronDateTime] } | Should -HaveCount 6
         }
     }
 }
