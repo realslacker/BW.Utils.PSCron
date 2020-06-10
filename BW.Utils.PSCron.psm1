@@ -2,8 +2,31 @@
 using namespace System.Collections
 
 $__ScriptPath = Split-Path (Get-Variable MyInvocation -Scope Script).Value.Mycommand.Definition -Parent
+[ArrayList]$__JobLog = @()
 
 Add-Type -Path "$__ScriptPath\lib\Cronos-0.7.0\netstandard2.0\Cronos.dll"
+
+function __AppendLog {
+
+    param(
+    
+        [datetime]
+        $TimeGenerated,
+        
+        [string]
+        $OutputStream,
+        
+        [string[]]
+        $MessageData
+        
+    )
+
+    $MessageData |
+        ForEach-Object { $_  -split '[\r\n]+' } |
+        ForEach-Object { '[{0:HH:mm:ss}] {1,-7} {2}' -f $TimeGenerated, $OutputStream, $_ } |
+        ForEach-Object { $Script:__JobLog.Add( $_ ) > $null }
+
+}
 
 # .ExternalHelp BW.Utils.PSCron-help.xml
 function Get-PSCronDate {
@@ -187,7 +210,7 @@ function Invoke-PSCronJob {
     }
 
     # variable to hold log
-    [ArrayList]$JobLog = @()
+    [ArrayList]$Script:__JobLog = @()
 
     # start timestamp
     $StartTime = Get-Date
@@ -199,7 +222,7 @@ function Invoke-PSCronJob {
     ( 'Schedule:       ' + $Schedule ),
     ( 'Reference Date: ' + $ReferenceDate ),
     ( 'Started:        ' + $StartTime ) |
-    ForEach-Object { Write-Information $_; $JobLog.Add( $_ ) > $null }
+    ForEach-Object { Write-Information $_; $Script:__JobLog.Add( $_ ) > $null }
 
     # create a powershell runspace
     $PowerShell = [PowerShell]::Create( [RunspaceMode]::NewRunspace )
@@ -292,7 +315,7 @@ function Invoke-PSCronJob {
     ( 'Result:         ' + $PowerShell.InvocationStateInfo.State ),
     ( 'Errors:         ' + $PowerShell.HadErrors ),
     ''.PadRight( 80, '-' ) |
-    ForEach-Object { Write-Information $_; $JobLog.Add( $_ ) > $null }
+    ForEach-Object { Write-Information $_; $Script:__JobLog.Add( $_ ) > $null }
 
     # dump the job information streams collected by the events above
     $InfoStreamIndex = 0
@@ -324,13 +347,20 @@ function Invoke-PSCronJob {
 
             }
         
-            # format for the log
-            $LogLine = '[{0:HH:mm:ss}] {1,-7} {2}' -f $_.TimeGenerated, $_.OutputStream, $_.MessageData
+            # send to JobLog
+            __AppendLog $_.TimeGenerated $_.OutputStream $_.MessageData
 
+            # add to output streams
             $Streams.Add( $_ ) > $null
-            $JobLog.Add( $LogLine ) > $null
         
         }
+
+    # if there is a TerminatingError attach to the log file
+    if ( $PowerShell.InvocationStateInfo.Reason -is [Exception] ) {
+
+        __AppendLog $EndTime 'ERROR' $PowerShell.InvocationStateInfo.Reason.ToString()
+        
+    }
 
     # if there is a -LogPath specified we output a log
     if ( $LogPath ) {
@@ -339,7 +369,7 @@ function Invoke-PSCronJob {
         $LogPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath( $LogPath )
 
         # dump the log header
-        $JobLog | Out-File -FilePath $LogPath -Append:$Append
+        $Script:__JobLog | Out-File -FilePath $LogPath -Append:$Append
 
     }
 
@@ -359,7 +389,7 @@ function Invoke-PSCronJob {
             EndTime             = $EndTime
             RunTime             = $RunTime
             State               = $PowerShell.InvocationStateInfo.State
-            Log                 = $JobLog | Out-String
+            Log                 = $Script:__JobLog | Out-String
             Output              = $Output
             Streams             = $Streams
             Errors              = [object[]]( $PowerShell.Streams.Error | ConvertTo-Json | ConvertFrom-Json )
