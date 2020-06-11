@@ -242,5 +242,17 @@ Describe 'Invoke-PSCronJob' {
             $Result.HadErrors | Should -Be $true
             $Result.TerminatingError | Should -BeOfType [System.Management.Automation.PipelineStoppedException]
         }
+        It 'should execute jobs in the diretory supplied to -WorkingDirectory' {
+            $TempPath = [System.IO.Path]::GetFullPath( $env:TEMP )
+            $Result = Invoke-PSCronJob '* * * * *' 'Fake Job' { $PWD } -WorkingDirectory $TempPath -PassThru
+            $Result.Output[0].Path | Should -Be $TempPath
+        }
+        It 'should place the path to the job script in the $Global:PSCronFile variable' {
+            $File = New-TemporaryFile | Select-Object -ExpandProperty FullName
+            Set-Content -Path $File -Value '$Global:PSCronFile'
+            $Result = Invoke-PSCronJob '* * * * *' 'Fake Job' -File $File -PassThru
+            $Result.Output[0] | Should -Be $File
+            Remove-Item $File
+        }
     }
 }
