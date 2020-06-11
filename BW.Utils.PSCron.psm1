@@ -344,7 +344,7 @@ function Invoke-PSCronJob {
     # if a file is provided we extract the code
     if ( $File ) {
 
-        $File = Resolve-Path $File | Select-Object -ExpandProperty Path
+        $File = Resolve-Path $File -ErrorAction Stop | Select-Object -ExpandProperty Path
 
         $SigningStatus = Get-AuthenticodeSignature $File
 
