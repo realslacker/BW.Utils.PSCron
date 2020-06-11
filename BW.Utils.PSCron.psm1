@@ -488,6 +488,7 @@ function Invoke-PSCronJob {
             RunTime             = $RunTime
             State               = $PowerShell.InvocationStateInfo.State
             Log                 = $Script:__JobLog | Out-String
+            LogPath             = $LogPath
             Output              = $Output
             Streams             = $Streams
             Errors              = [object[]]( $PowerShell.Streams.Error | ConvertTo-Json | ConvertFrom-Json )
