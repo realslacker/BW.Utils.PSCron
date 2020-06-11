@@ -1,5 +1,6 @@
 ﻿using namespace System.Management.Automation
 using namespace System.Collections
+using namespace Microsoft.PowerShell
 
 $__ScriptPath = Split-Path (Get-Variable MyInvocation -Scope Script).Value.Mycommand.Definition -Parent
 [ArrayList]$__JobLog = @()
@@ -27,6 +28,69 @@ function __AppendLog {
         ForEach-Object { $Script:__JobLog.Add( $_ ) > $null }
 
 }
+
+function __SignatureRequired {
+
+    param(
+
+        [string]
+        $Path,
+
+        [ExecutionPolicy]
+        $ExecutionPolicy = ( Get-ExecutionPolicy )
+
+    )
+
+    switch ( $ExecutionPolicy ) {
+    
+        # Requires that all scripts and configuration files be signed by a trusted publisher, including scripts that you write on the local computer.
+        'AllSigned' { $true }
+
+        # Nothing is blocked and there are no warnings or prompts.
+        'Bypass' { $false }
+
+        'Default' {
+        
+            [bool]$ServerOS = Get-WmiObject -Query 'SELECT ProductType FROM Win32_OperatingSystem WHERE ProductType > 1'
+
+            return __SignatureRequired $Path ( 'Restricted', 'RemoteSigned' )[ $ServerOS ]
+        
+        }
+
+        'RemoteSigned' {
+        
+            # if the file is downloaded then we will require a signature
+            if ( [bool]( Get-Item $Path -Stream * | Where-Object { $_.Stream -eq 'Zone.Identifier' } ) ) { return $true }
+
+            # otherwise we check if the file is on a UNC path
+            $Uri = $null
+            if ( [System.Uri]::TryCreate( $Path, [System.UriKind]::Absolute, ( [ref]$Uri ) ) -and $Uri.IsUnc ) { return $true }
+
+            # in other cases return false
+            return $false
+        
+        }
+
+        'Restricted' {
+
+            throw 'Scripts are not allowed when execution policy is Restricted'
+
+        }
+
+        'Undefined' {
+
+            throw 'Scripts are not allowed when execution policy is Undefined'
+
+        }
+
+        'Unrestricted' { $false }
+
+        default { $true }
+    
+    }
+
+}
+
 
 # .ExternalHelp BW.Utils.PSCron-help.xml
 function Get-PSCronDate {
@@ -281,11 +345,33 @@ function Invoke-PSCronJob {
     if ( $File ) {
 
         $File = Resolve-Path $File | Select-Object -ExpandProperty Path
-        
-        $Definition = [scriptblock]::Create( ( Get-Content $File | Out-String ) )
 
-        # we add a variable to the $StreamPreferences with the $File name
-        $StreamPreferences.Add( "`$Global:PSCronFile = '$File'" ) > $null
+        $SigningStatus = Get-AuthenticodeSignature $File
+
+        $ExecutionPolicySplat = @{}
+        if ( $ExecutionPolicy ) { $ExecutionPolicySplat.ExecutionPolicy = $ExecutionPolicy }
+
+        $ValidateSignature = __SignatureRequired $File @ExecutionPolicySplat
+
+        if ( $ValidateSignature -and $SigningStatus.Status -eq 'Valid' ) {
+
+            $Definition = [scriptblock]::Create( ( Get-Content $File | Out-String ) )
+
+            # we add a variable to the $StreamPreferences with the $File name
+            $StreamPreferences.Add( "`$Global:PSCronFile = '$File'" ) > $null
+
+        } else {
+
+            Write-Warning 'Failed authenticode signature validation for file:'
+            Write-Warning $File
+
+            $Definition = {
+
+                throw [System.Management.Automation.PSSecurityException]::new( 'Invalid Authenticode Signature' )
+
+            }
+
+        }
 
     }
 
