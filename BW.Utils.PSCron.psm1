@@ -197,6 +197,9 @@ function Invoke-PSCronJob {
         [string]
         $Description,
 
+        [string]
+        $WorkingDirectory,
+
         [switch]
         $PassThru
     
@@ -258,16 +261,21 @@ function Invoke-PSCronJob {
         
     } > $null
     
-    # add an init script for default output settings
-    $StreamPreferences = @(
+    # create an init script for default output settings
+    [ArrayList]$StreamPreferences = @(
         "`$Global:ProgressPreference     = 'SilentlyContinue'"
         "`$Global:InformationPreference  = '$JobInformationPreference'"
         "`$Global:DebugPreference        = '$JobDebugPreference'"
         "`$Global:WarningPreference      = '$JobWarningPreference'"
         "`$Global:ErrorActionPreference  = '$JobErrorActionPreference'"
-    ) | Out-String
-    $InitScript = [scriptblock]::Create( $StreamPreferences )
-    $PowerShell.AddScript( $InitScript, $true ) > $null
+    )
+
+    # if a working directory is provided we switch to that location in the init script
+    if ( $WorkingDirectory ) {
+
+        $StreamPreferences.Add( "Set-Location -Path '$WorkingDirectory' -ErrorAction Stop" ) > $null
+        
+    }
 
     # if a file is provided we extract the code
     if ( $File ) {
@@ -276,7 +284,14 @@ function Invoke-PSCronJob {
         
         $Definition = [scriptblock]::Create( ( Get-Content $File | Out-String ) )
 
+        # we add a variable to the $StreamPreferences with the $File name
+        $StreamPreferences.Add( "`$Global:PSCronFile = '$File'" ) > $null
+
     }
+
+    # add the init script
+    $InitScript = [scriptblock]::Create( ( $StreamPreferences | Out-String ) )
+    $PowerShell.AddScript( $InitScript, $true ) > $null
     
     # add the script
     $PowerShell.AddScript( $Definition, $true ) > $null
