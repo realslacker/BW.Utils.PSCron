@@ -348,12 +348,9 @@ function Invoke-PSCronJob {
 
         $SigningStatus = Get-AuthenticodeSignature $File
 
-        $ExecutionPolicySplat = @{}
-        if ( $ExecutionPolicy ) { $ExecutionPolicySplat.ExecutionPolicy = $ExecutionPolicy }
+        $ValidateSignature = __SignatureRequired $File
 
-        $ValidateSignature = __SignatureRequired $File @ExecutionPolicySplat
-
-        if ( $ValidateSignature -and $SigningStatus.Status -eq 'Valid' ) {
+        if ( -not $ValidateSignature -and $SigningStatus.Status -eq 'Valid' ) {
 
             $Definition = [scriptblock]::Create( ( Get-Content $File | Out-String ) )
 
