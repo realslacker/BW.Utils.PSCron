@@ -9,8 +9,8 @@ class PSCronJobObject {
     [string]$Name
     [string]$Description
     [string]$Source
-    [System.IO.FileInfo]$FilePath
-    [ExecutionPolicy]$ExecutionPolicy = ( Get-ExecutionPolicy )
+    hidden [System.IO.FileInfo]$__FilePath
+    hidden [ExecutionPolicy]$__ExecutionPolicy = ( Get-ExecutionPolicy )
     [scriptblock]$Definition
     [System.IO.DirectoryInfo]$WorkingDirectory = ( [Environment]::SystemDirectory )
     [PSCronDateTime]$ReferenceDate = ( Get-PSCronDate )
@@ -20,7 +20,7 @@ class PSCronJobObject {
     [PSInvocationState]$State
     hidden [ArrayList]$__Log = @()
     [FileInfo]$LogPath
-    [bool]$Append = $false
+    hidden [bool]$__Append = $false
     [int]$TimeOut = 60
     [PSDataCollection[pscustomobject]]$Output
     [PSDataCollection[ErrorRecord]]$Errors
@@ -31,50 +31,104 @@ class PSCronJobObject {
     [ActionPreference]$JobWarningPreference = 'Continue'
     [ActionPreference]$JobErrorActionPreference = 'Stop'
 
-    PSCronJobObject (){
+    PSCronJobObject( [hashtable]$Hashtable ) {
 
-        $this.__InitLog()
-        $this.__InitMemberSet()
+        $this.__Init( $Hashtable )
 
     }
 
-    PSCronJobObject ( [hashtable]$Hashtable ) {
+    hidden [void] __Init( [hashtable]$Hashtable ) {
 
-        $MyProperties = $this |
-            Get-Member -MemberType Property |
+        # get all object properties
+        [string[]]$MyProperties = $this |
+            Get-Member -MemberType Property -Force |
             Select-Object -ExpandProperty Name
 
-        $Hashtable.Keys |
-            Where-Object { $_ -in $MyProperties } |
-            ForEach-Object { 
+        # set initial property values and property readers for hidden
+        # properties
+        $MyProperties | ForEach-Object {
 
-                $this.$_ = $Hashtable.$_
+            $KeyName = $_ -replace '^__'
+            
+            # initialize property values
+            if ( $KeyName -in $Hashtable.Keys ) {
+
+                $this.$_ = $Hashtable.$KeyName
 
             }
 
-        $this.__InitLog()
-        $this.__InitMemberSet()
+            # configure read only properties, except Log which is handled
+            # below
+            if ( $KeyName -ne $_ ) {
 
-    }
+                $this | Add-Member -MemberType ScriptProperty -Name $KeyName -Value ( [scriptblock]::Create( "`$this.$_" ) )            
 
-    hidden [void] __InitLog() {
+            }
 
+        }
+
+        # configure the SigningStatus property
+        $this | Add-Member -Name SigningStatus -MemberType ScriptProperty -Value {
+
+            if ( -not $this.FilePath ) { [SignatureStatus]::NotSupportedFileFormat }
+
+            return ( Get-AuthenticodeSignature $this.FilePath ).Status
+
+        }
+
+        # configure the SignatureRequired property
+        $this | Add-Member -Name SignatureRequired -MemberType ScriptProperty -Value {
+
+            return $this.__SignatureRequired( $this.FilePath, $this.ExecutionPolicy )
+
+        }
+
+        # override the Log property since we handle that in a special way
         $this | Add-Member -Name Log -MemberType ScriptProperty -Value {
 
             $this.__Log | Out-String
 
         } -Force
 
-        if ( -not $this.Append -and $this.LogPath -and ( Test-Path $this.LogPath -PathType Leaf ) ) {
+        # override the FilePath property since we handle that in a special way
+        $this | Add-Member -Name FilePath -MemberType ScriptProperty -Value {
 
-            '' | Set-Content $this.LogPath -Force -Encoding UTF8 -NoNewline
+            $this.__FilePath
 
-        }
+        } -SecondValue {
 
-    }
+            param(
 
-    hidden [void] __InitMemberSet() {
+                [ValidateNotNullOrEmpty()]
+                [System.IO.FileInfo]
+                $FilePath
 
+            )
+
+            $this.__FilePath = $FilePath
+
+            if ( -not $this.SignatureRequired -or  $this.SigningStatus -eq 'Valid' ) {
+
+                $this.Definition = [scriptblock]::Create( ( Get-Content $this.__FilePath | Out-String ) )
+    
+            } else {
+    
+                Write-Warning 'Failed authenticode signature validation for file:'
+                Write-Warning $this.__FilePath
+    
+                $this.Definition = {
+    
+                    throw [System.Management.Automation.PSSecurityException]::new( 'Invalid Authenticode Signature' )
+    
+                }
+    
+            }
+        } -Force
+
+        # rerun assignment for $FilePath to initialize properly
+        if ( $Hashtable.FilePath ) { $this.FilePath = $Hashtable.FilePath }
+
+        # setup the default display property set
         [string[]]$DefaultProperties = 'Name', 'Description', 'Schedule', 'Source', 'StartDate', 'EndDate', 'RunTime', 'Output', 'State', 'HadErrors'
 
         $DefaultDisplayPropertySet = [PSPropertySet]::new( 'DefaultDisplayPropertySet', $DefaultProperties )
@@ -93,11 +147,16 @@ class PSCronJobObject {
 
     [void] LogRaw( [string]$MessageData ) {
 
+        # the first time this function is called ( $this-__Log.Count -eq 0 )
+        # and we are overwritting the log ( -not $this.__Append ) and the log
+        # path is set we overwrite any existing log
+        $Append = -not ( $this.__Log.Count -eq 0 -and -not $this.__Append -and $this.LogPath )
+
         $this.__Log.Add( $MessageData )
 
         if ( $this.LogPath ) {
             
-            $MessageData | Out-File -FilePath $this.LogPath.FullName -Append
+            $MessageData | Out-File -FilePath $this.LogPath.FullName -Append:$Append -Encoding UTF8
             
         }
     
@@ -112,21 +171,7 @@ class PSCronJobObject {
 
     }
 
-    [SignatureStatus] SigningStatus() {
-
-        if ( -not $this.FilePath ) { [SignatureStatus]::NotSupportedFileFormat }
-
-        return ( Get-AuthenticodeSignature $this.FilePath ).Status
-
-    }
-
-    [bool] SignatureRequired() {
-
-        return $this.SignatureRequired( $this.FilePath, $this.ExecutionPolicy )
-
-    }
-
-    [bool] SignatureRequired( [FileInfo]$FilePath, [ExecutionPolicy]$ExecutionPolicy ) {
+    hidden [bool] __SignatureRequired( [FileInfo]$FilePath, [ExecutionPolicy]$ExecutionPolicy ) {
     
         switch ( $ExecutionPolicy ) {
         
