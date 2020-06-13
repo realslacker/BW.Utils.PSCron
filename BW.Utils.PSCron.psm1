@@ -232,7 +232,13 @@ function Invoke-PSCronJob {
 
         [Parameter( Mandatory, ParameterSetName='File' )]
         [string]
-        $File,
+        $FilePath,
+
+        [string]
+        $Description,
+
+        [string]
+        $WorkingDirectory,
 
         [string]
         $LogPath,
@@ -241,28 +247,22 @@ function Invoke-PSCronJob {
         $Append,
 
         [int]
-        $TimeOut = 60,
+        $TimeOut,
 
         [ActionPreference]
-        $JobInformationPreference = 'Continue',
+        $JobInformationPreference,
 
         [ActionPreference]
-        $JobDebugPreference = 'SilentlyContinue',
+        $JobDebugPreference,
 
         [ActionPreference]
-        $JobWarningPreference = 'Continue',
+        $JobWarningPreference,
 
         [ActionPreference]
-        $JobErrorActionPreference = 'Stop',
+        $JobErrorActionPreference,
 
         [PSCronDateTime]
-        $ReferenceDate = ( Get-PSCronDate ),
-
-        [string]
-        $Description,
-
-        [string]
-        $WorkingDirectory,
+        $ReferenceDate,
 
         [switch]
         $PassThru
@@ -276,20 +276,42 @@ function Invoke-PSCronJob {
 
     }
 
-    # variable to hold log
-    [ArrayList]$Script:__JobLog = @()
+    # resolve -FilePath to a full path
+    if ( $PSBoundParameters.ContainsKey( 'FilePath' ) ) {
 
-    # start timestamp
-    $StartTime = Get-Date
+        $PSBoundParameters['FilePath'] = $FilePath = Resolve-Path $FilePath -ErrorAction Stop |
+            Select-Object -ExpandProperty Path
 
-    # write status to the screen in case job is run interactively
-    ''.PadRight( 80, '-' ),
-    ( 'Name:           ' + $Name ),
-    ( 'Description:    ' + $Description ),
-    ( 'Schedule:       ' + $Schedule ),
-    ( 'Reference Date: ' + $ReferenceDate ),
-    ( 'Started:        ' + $StartTime ) |
-    ForEach-Object { Write-Information $_; $Script:__JobLog.Add( $_ ) > $null }
+    }
+
+    # resolve -WorkingDirectory to a full path
+    if ( $PSBoundParameters.ContainsKey( 'WorkingDirectory' ) ) {
+
+        $PSBoundParameters['WorkingDirectory'] = $WorkingDirectory = Resolve-Path $WorkingDirectory -ErrorAction Stop |
+            Select-Object -ExpandProperty Path
+
+    }
+
+    # resolve -LogPath to a full path
+    if ( $PSBoundParameters.ContainsKey( 'LogPath' ) ) {
+
+        $LogFile      = Split-Path $LogPath -Leaf
+        $LogDirectory = Split-Path $LogPath -Parent
+
+        $PSBoundParameters['LogPath'] = $LogPath = Resolve-Path $LogDirectory -ErrorAction Stop |
+            Select-Object -ExpandProperty Path |
+            ForEach-Object {
+                
+                $LogDirectory = $_
+                Join-Path $LogDirectory $LogFile
+            
+            }
+
+    }
+    
+    # initialize a cron result object
+    $CronJob = [PSCronJobObject]::new( $PSBoundParameters )
+    $CronJob.Source = $PSCmdlet.ParameterSetName
 
     # create a powershell runspace
     $PowerShell = [PowerShell]::Create( [RunspaceMode]::NewRunspace )
@@ -328,41 +350,35 @@ function Invoke-PSCronJob {
     # create an init script for default output settings
     [ArrayList]$StreamPreferences = @(
         "`$Global:ProgressPreference     = 'SilentlyContinue'"
-        "`$Global:InformationPreference  = '$JobInformationPreference'"
-        "`$Global:DebugPreference        = '$JobDebugPreference'"
-        "`$Global:WarningPreference      = '$JobWarningPreference'"
-        "`$Global:ErrorActionPreference  = '$JobErrorActionPreference'"
+        "`$Global:InformationPreference  = '$($CronJob.JobInformationPreference)'"
+        "`$Global:DebugPreference        = '$($CronJob.JobDebugPreference)'"
+        "`$Global:WarningPreference      = '$($CronJob.JobWarningPreference)'"
+        "`$Global:ErrorActionPreference  = '$($CronJob.JobErrorActionPreference)'"
     )
 
     # if a working directory is provided we switch to that location in the init script
-    if ( $WorkingDirectory ) {
+    if ( $CronJob.WorkingDirectory ) {
 
-        $StreamPreferences.Add( "Set-Location -Path '$WorkingDirectory' -ErrorAction Stop" ) > $null
+        $StreamPreferences.Add( "Set-Location -Path '$($CronJob.WorkingDirectory)' -ErrorAction Stop" ) > $null
         
     }
 
     # if a file is provided we extract the code
-    if ( $File ) {
+    if ( $CronJob.FilePath ) {
 
-        $File = Resolve-Path $File -ErrorAction Stop | Select-Object -ExpandProperty Path
+        if ( -not $CronJob.SignatureRequired() -or  $CronJob.SigningStatus() -eq 'Valid' ) {
 
-        $SigningStatus = Get-AuthenticodeSignature $File
-
-        $ValidateSignature = __SignatureRequired $File
-
-        if ( -not $ValidateSignature -and $SigningStatus.Status -eq 'Valid' ) {
-
-            $Definition = [scriptblock]::Create( ( Get-Content $File | Out-String ) )
+            $CronJob.Definition = [scriptblock]::Create( ( Get-Content $CronJob.FilePath | Out-String ) )
 
             # we add a variable to the $StreamPreferences with the $File name
-            $StreamPreferences.Add( "`$Global:PSCronFile = '$File'" ) > $null
+            $StreamPreferences.Add( "`$Global:PSCronFile = '$($CronJob.FilePath)'" ) > $null
 
         } else {
 
             Write-Warning 'Failed authenticode signature validation for file:'
-            Write-Warning $File
+            Write-Warning $CronJob.FilePath
 
-            $Definition = {
+            $CronJob.Definition = {
 
                 throw [System.Management.Automation.PSSecurityException]::new( 'Invalid Authenticode Signature' )
 
@@ -377,9 +393,9 @@ function Invoke-PSCronJob {
     $PowerShell.AddScript( $InitScript, $true ) > $null
     
     # add the script
-    $PowerShell.AddScript( $Definition, $true ) > $null
+    $PowerShell.AddScript( $CronJob.Definition, $true ) > $null
 
-    # container for output
+    # collection for output
     $Output = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
 
     # run the script
@@ -391,9 +407,9 @@ function Invoke-PSCronJob {
         Start-Sleep -Milliseconds 500
 
         # kill the job?
-        if ( ( (Get-Date) - $StartTime ).TotalSeconds -gt $TimeOut ) {
+        if ( ( (Get-Date) - ([datetime]$CronJob.StartDate) ).TotalSeconds -gt $CronJob.TimeOut ) {
 
-            Write-Warning ( '{0} has timed out, the job was stopped after {1} seconds' -f $Name, $TimeOut )
+            Write-Warning ( '{0} has timed out, the job was stopped after {1} seconds' -f $CronJob.Name, $CronJob.TimeOut )
             $PowerShell.RunSpace.Dispose() > $null
             $PowerShell.Stop() > $null
 
@@ -401,23 +417,39 @@ function Invoke-PSCronJob {
     
     }
 
+    # record the results
+    $CronJob.Output = $Output
+    $CronJob.State = $PowerShell.InvocationStateInfo.State
+    $CronJob.HadErrors = $PowerShell.HadErrors
+
     # end timestamp
-    $EndTime = Get-Date
+    $CronJob.EndDate = Get-PSCronDate -Resolution Millisecond
 
     # calculate the job runtime
-    [timespan]$RunTime = $EndTime - $StartTime
+    $CronJob.RunTime = $CronJob.EndDate - $CronJob.StartDate
 
-    # more logging
-    ( 'Finished:       ' + $EndTime ),
-    ( 'Elapsed:        {0} seconds' -f $RunTime.TotalSeconds ),
+    # write status to the screen in case job is run interactively
+    ''.PadRight( 80, '-' ),
+    ( 'Name:           ' + $CronJob.Name ),
+    ( 'Description:    ' + $CronJob.Description ),
+    ( 'Schedule:       ' + $CronJob.Schedule ),
+    ( 'Reference Date: ' + $CronJob.ReferenceDate ),
+    ( 'Started:        ' + $CronJob.StartDate ),
+    ( 'Finished:       ' + $CronJob.EndDate ),
+    ( 'Elapsed:        {0} seconds' -f $CronJob.RunTime.TotalSeconds ),
     ( 'Result:         ' + $PowerShell.InvocationStateInfo.State ),
     ( 'Errors:         ' + $PowerShell.HadErrors ),
     ''.PadRight( 80, '-' ) |
-    ForEach-Object { Write-Information $_; $Script:__JobLog.Add( $_ ) > $null }
+    ForEach-Object {
+        
+        Write-Information $_
+        
+        $CronJob.LogRaw( $_ )
+
+    }
 
     # dump the job information streams collected by the events above
     $InfoStreamIndex = 0
-    [ArrayList]$Streams = @()
     Get-Event -SourceIdentifier 'PSCronLog:*' |
         Select-Object TimeGenerated, @{N='OutputStream';E={$_.SourceIdentifier.Split(':')[1].ToUpper()}}, MessageData |
         ForEach-Object {
@@ -446,61 +478,36 @@ function Invoke-PSCronJob {
             }
         
             # send to JobLog
-            __AppendLog $_.TimeGenerated $_.OutputStream $_.MessageData
-
-            # add to output streams
-            $Streams.Add( $_ ) > $null
+            $CronJob.LogMessage( $_.TimeGenerated, $_.OutputStream, $_.MessageData )
         
         }
+
+    # if there are non-terminating errors attach them
+    if ( $PowerShell.Streams.Error.Count -gt 0 ) {
+
+        $CronJob.Errors = $PowerShell.Streams.Error |
+            ForEach-Object { $_ }
+
+    }
 
     # if there is a TerminatingError attach to the log file
     if ( $PowerShell.InvocationStateInfo.Reason -is [Exception] ) {
 
-        __AppendLog $EndTime 'ERROR' $PowerShell.InvocationStateInfo.Reason.ToString()
+        $CronJob.LogMessage( $CronJob.EndDate, 'ERROR', $PowerShell.InvocationStateInfo.Reason.ToString() )
+
+        $CronJob.TerminatingError = $PowerShell.InvocationStateInfo.Reason
         
-    }
-
-    # if there is a -LogPath specified we output a log
-    if ( $LogPath ) {
-
-        # resolve the log path to a complete path
-        $LogPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath( $LogPath )
-
-        # dump the log header
-        $Script:__JobLog | Out-File -FilePath $LogPath -Append:$Append
-
     }
 
     # clean up events
     Get-Event -SourceIdentifier 'PSCronLog:*' | Remove-Event
 
-    if ( $PassThru ) {
-
-        # pass through the results
-        [PSCustomObject][ordered]@{
-            Name                = $Name
-            Description         = $Description
-            Source              = $PSCmdlet.ParameterSetName
-            Definition          = $Definition.ToString()
-            ReferenceDate       = $ReferenceDate
-            StartTime           = $StartTime
-            EndTime             = $EndTime
-            RunTime             = $RunTime
-            State               = $PowerShell.InvocationStateInfo.State
-            Log                 = $Script:__JobLog | Out-String
-            LogPath             = $LogPath
-            Output              = $Output
-            Streams             = $Streams
-            Errors              = [object[]]( $PowerShell.Streams.Error | ConvertTo-Json | ConvertFrom-Json )
-            TerminatingError    = $( if ( $PowerShell.InvocationStateInfo.Reason -is [Exception] ) { $PowerShell.InvocationStateInfo.Reason } )
-            HadErrors           = $PowerShell.HadErrors
-        }
-
-    }
-
     # clean up the runspace
     $PowerShell.RunSpace.Dispose() > $null
     $PowerShell.Dispose() > $null
+
+    # pass through the job?
+    if ( $PassThru ) { $CronJob }
 
 }
 
@@ -511,8 +518,8 @@ function Send-PSCronNotification {
     param(
 
         [Parameter( Mandatory, ValueFromPipeline )]
-        [object[]]
-        $CronResult,
+        [PSCronJobObject[]]
+        $CronJob,
 
         [Parameter( Mandatory )]
         [ValidateNotNullOrEmpty()]
@@ -581,7 +588,9 @@ function Send-PSCronNotification {
 
     process {
 
-        $CronResult | ForEach-Object {
+        $CronJob | ForEach-Object {
+
+            $_.LogMessage( (Get-Date), 'INFO', 'Send-PSCronNotification - Sending notifications...' )
 
             Send-MailMessage `
                 -Subject ( $Subject -f $_.Name ) `
