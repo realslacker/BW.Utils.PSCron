@@ -363,28 +363,10 @@ function Invoke-PSCronJob {
         
     }
 
-    # if a file is provided we extract the code
+    # we add a variable to the $StreamPreferences with the $File name
     if ( $CronJob.FilePath ) {
 
-        if ( -not $CronJob.SignatureRequired() -or  $CronJob.SigningStatus() -eq 'Valid' ) {
-
-            $CronJob.Definition = [scriptblock]::Create( ( Get-Content $CronJob.FilePath | Out-String ) )
-
-            # we add a variable to the $StreamPreferences with the $File name
-            $StreamPreferences.Add( "`$Global:PSCronFile = '$($CronJob.FilePath)'" ) > $null
-
-        } else {
-
-            Write-Warning 'Failed authenticode signature validation for file:'
-            Write-Warning $CronJob.FilePath
-
-            $CronJob.Definition = {
-
-                throw [System.Management.Automation.PSSecurityException]::new( 'Invalid Authenticode Signature' )
-
-            }
-
-        }
+        $StreamPreferences.Add( "`$Global:PSCronFile = '$($CronJob.FilePath)'" ) > $null
 
     }
 
@@ -396,6 +378,8 @@ function Invoke-PSCronJob {
     $PowerShell.AddScript( $CronJob.Definition, $true ) > $null
 
     # collection for output
+    # note: input cannot be assigned directly to the PSCronJobObject.Output property
+    # because of the variable reference scope
     $Output = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
 
     # run the script
@@ -440,13 +424,7 @@ function Invoke-PSCronJob {
     ( 'Result:         ' + $PowerShell.InvocationStateInfo.State ),
     ( 'Errors:         ' + $PowerShell.HadErrors ),
     ''.PadRight( 80, '-' ) |
-    ForEach-Object {
-        
-        Write-Information $_
-        
-        $CronJob.LogRaw( $_ )
-
-    }
+    ForEach-Object { $CronJob.LogRaw( $_ ) }
 
     # dump the job information streams collected by the events above
     $InfoStreamIndex = 0

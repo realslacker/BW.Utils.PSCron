@@ -163,10 +163,10 @@ Describe 'Invoke-PSCronJob' {
             $Schedule = (Get-Date).AddMinutes(-1).ToString( 'm * * * *' )
             { Invoke-PSCronJob $Schedule -Name 'Fake Job' -Definition {$true} } | Should -Not -Throw
         }
-        It 'should accept a -File' {
+        It 'should accept a -FilePath' {
             $Schedule = (Get-Date).AddMinutes(-1).ToString( 'm * * * *' )
             $File = New-TemporaryFile | %{ '$true' | Set-Content -Path $_; $_.FullName }
-            { Invoke-PSCronJob $Schedule 'Fake Job' -File $File } | Should -Not -Throw
+            { Invoke-PSCronJob $Schedule 'Fake Job' -FilePath $File } | Should -Not -Throw
             Remove-Item -Path $File -Force -Confirm:$false
         }
         It 'should create a log file if -LogPath is specified and the job runs' {
@@ -250,7 +250,7 @@ Describe 'Invoke-PSCronJob' {
         It 'should place the path to the job script in the $Global:PSCronFile variable' {
             $File = New-TemporaryFile | Select-Object -ExpandProperty FullName
             Set-Content -Path $File -Value '$Global:PSCronFile'
-            $Result = Invoke-PSCronJob '* * * * *' 'Fake Job' -File $File -PassThru
+            $Result = Invoke-PSCronJob '* * * * *' 'Fake Job' -FilePath $File -PassThru
             $Result.Output[0] | Should -Be $File
             Remove-Item $File
         }
