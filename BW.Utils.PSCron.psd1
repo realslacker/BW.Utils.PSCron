@@ -57,7 +57,7 @@ PowerShellVersion = '5.1'
 # RequiredAssemblies = @()
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
-ScriptsToProcess = 'classes\PSCronTicks.ps1','classes\PSCronDateTime.ps1'
+ScriptsToProcess = 'classes\PSCronTicks.ps1', 'classes\PSCronDateTime.ps1', 'classes\PSCronJobObject.ps1'
 
 # Type files (.ps1xml) to be loaded when importing this module
 # TypesToProcess = @()
