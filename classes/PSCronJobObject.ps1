@@ -22,7 +22,7 @@ class PSCronJobObject {
     [FileInfo]$LogPath
     [bool]$Append = $false
     [int]$TimeOut = 60
-    [PSDataCollection[psobject]]$Output
+    [PSDataCollection[pscustomobject]]$Output
     [PSDataCollection[ErrorRecord]]$Errors
     [Exception]$TerminatingError
     [bool]$HadErrors
