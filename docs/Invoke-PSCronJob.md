@@ -14,17 +14,19 @@ Runs a cron job.
 
 ### ScriptBlock (Default)
 ```
-Invoke-PSCronJob [-Schedule] <String> -Name <String> [-Definition] <ScriptBlock> [-LogPath <String>] [-Append]
- [-Timeout <Int32>] [-JobInformationPreference <ActionPreference>] [-JobDebugPreference <ActionPreference>]
- [-JobWarningPreference <ActionPreference>] [-JobErrorPreference <ActionPreference>]
+Invoke-PSCronJob [-Schedule] <String> -Name <String> [-Definition] <ScriptBlock> [-Description <String>]
+ [-WorkingDirectory <String>] [-Parameters <Hashtable>] [-Arguments <Object[]>] [-LogPath <String>] [-Append]
+ [-TimeOut <Int32>] [-JobInformationPreference <ActionPreference>] [-JobDebugPreference <ActionPreference>]
+ [-JobWarningPreference <ActionPreference>] [-JobErrorActionPreference <ActionPreference>]
  [-ReferenceDate <PSCronDateTime>] [-PassThru] [<CommonParameters>]
 ```
 
 ### File
 ```
-Invoke-PSCronJob [-Schedule] <String> -Name <String> -File <String> [-LogPath <String>] [-Append]
+Invoke-PSCronJob [-Schedule] <String> -Name <String> -FilePath <String> [-Description <String>]
+ [-WorkingDirectory <String>] [-Parameters <Hashtable>] [-Arguments <Object[]>] [-LogPath <String>] [-Append]
  [-TimeOut <Int32>] [-JobInformationPreference <ActionPreference>] [-JobDebugPreference <ActionPreference>]
- [-JobWarningPreference <ActionPreference>] [-JobErrorPreference <ActionPreference>]
+ [-JobWarningPreference <ActionPreference>] [-JobErrorActionPreference <ActionPreference>]
  [-ReferenceDate <PSCronDateTime>] [-PassThru] [<CommonParameters>]
 ```
 
@@ -94,7 +96,7 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -File
+### -FilePath
 A file containing the job code to execute.
 
 ```yaml
@@ -166,6 +168,39 @@ Aliases:
 Required: False
 Position: Named
 Default value: ( Get-PSCronDate )
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Arguments
+An ordered list of arguments to supply to the script.
+Any unbound arguments will be contained in the $args
+variable.
+
+```yaml
+Type: Object[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Parameters
+A hashtable object with key value pairs that correspond
+to parameters in the script.
+
+```yaml
+Type: Hashtable
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

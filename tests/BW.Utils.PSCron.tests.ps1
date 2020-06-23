@@ -254,5 +254,21 @@ Describe 'Invoke-PSCronJob' {
             $Result.Output[0] | Should -Be $File
             Remove-Item $File
         }
+        It 'should accept parameters as a hashtable with the -Parameters argument' {
+            $Result = Invoke-PSCronJob '* * * * *' 'Fake Job' { param( [string[]]$TestString, [switch]$TestSwitch ) $PSBoundParameters } -Parameters @{ TestString = 'Test1','Test2'; TestSwitch=$true } -PassThru
+            $Result.Output[0].TestString | Should -HaveCount 2
+            $Result.Output[0].TestString[0] | Should -Be 'Test1'
+            $Result.Output[0].TestString[1] | Should -Be 'Test2'
+            $Result.Output[0].TestSwitch | Should -Be $true
+        }
+        It 'should accept arguments as an array with the -Arguments argument' {
+            $Result = Invoke-PSCronJob '* * * * *' 'Fake Job' { param( $Test ) @{ Test=$Test; Args=$args} } -Arguments 'Test1','Test2','Test3' -PassThru
+            $Result.Output[0].Keys | Should -HaveCount 2
+            $Result.Output[0].Test | Should -Be 'Test1'
+            $Result.Output[0].Args | Should -HaveCount 2
+            $Result.Output[0].Args | Should -Not -Contain 'Test1'
+            $Result.Output[0].Args | Should -Contain 'Test2'
+            $Result.Output[0].Args | Should -Contain 'Test3'
+        }
     }
 }

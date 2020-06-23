@@ -514,6 +514,30 @@
           <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Arguments</maml:name>
+          <maml:Description>
+            <maml:para>An ordered list of arguments to supply to the script. Any unbound arguments will be contained in the $args variable.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Parameters</maml:name>
+          <maml:Description>
+            <maml:para>A hashtable object with key value pairs that correspond to parameters in the script.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Hashtable</command:parameterValue>
+          <dev:type>
+            <maml:name>Hashtable</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>JobDebugPreference</maml:name>
           <maml:Description>
             <maml:para>Sets the $DebugPreference in the job environment.</maml:para>
@@ -612,7 +636,7 @@
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
-          <maml:name>File</maml:name>
+          <maml:name>FilePath</maml:name>
           <maml:Description>
             <maml:para>A file containing the job code to execute.</maml:para>
           </maml:Description>
@@ -681,6 +705,30 @@
             <maml:uri />
           </dev:type>
           <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Arguments</maml:name>
+          <maml:Description>
+            <maml:para>An ordered list of arguments to supply to the script. Any unbound arguments will be contained in the $args variable.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Parameters</maml:name>
+          <maml:Description>
+            <maml:para>A hashtable object with key value pairs that correspond to parameters in the script.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Hashtable</command:parameterValue>
+          <dev:type>
+            <maml:name>Hashtable</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>JobDebugPreference</maml:name>
@@ -805,7 +853,7 @@
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
-        <maml:name>File</maml:name>
+        <maml:name>FilePath</maml:name>
         <maml:Description>
           <maml:para>A file containing the job code to execute.</maml:para>
         </maml:Description>
@@ -863,6 +911,30 @@
           <maml:uri />
         </dev:type>
         <dev:defaultValue>( Get-PSCronDate )</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Arguments</maml:name>
+        <maml:Description>
+          <maml:para>An ordered list of arguments to supply to the script. Any unbound arguments will be contained in the $args variable.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">Object[]</command:parameterValue>
+        <dev:type>
+          <maml:name>Object[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Parameters</maml:name>
+        <maml:Description>
+          <maml:para>A hashtable object with key value pairs that correspond to parameters in the script.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">Hashtable</command:parameterValue>
+        <dev:type>
+          <maml:name>Hashtable</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>JobDebugPreference</maml:name>

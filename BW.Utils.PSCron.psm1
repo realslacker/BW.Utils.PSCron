@@ -3,94 +3,8 @@ using namespace System.Collections
 using namespace Microsoft.PowerShell
 
 $__ScriptPath = Split-Path (Get-Variable MyInvocation -Scope Script).Value.Mycommand.Definition -Parent
-[ArrayList]$__JobLog = @()
 
 Add-Type -Path "$__ScriptPath\lib\Cronos-0.7.0\netstandard2.0\Cronos.dll"
-
-function __AppendLog {
-
-    param(
-    
-        [datetime]
-        $TimeGenerated,
-        
-        [string]
-        $OutputStream,
-        
-        [string[]]
-        $MessageData
-        
-    )
-
-    $MessageData |
-        ForEach-Object { $_  -split '[\r\n]+' } |
-        ForEach-Object { '[{0:HH:mm:ss}] {1,-7} {2}' -f $TimeGenerated, $OutputStream, $_ } |
-        ForEach-Object { $Script:__JobLog.Add( $_ ) > $null }
-
-}
-
-function __SignatureRequired {
-
-    param(
-
-        [string]
-        $Path,
-
-        [ExecutionPolicy]
-        $ExecutionPolicy = ( Get-ExecutionPolicy )
-
-    )
-
-    switch ( $ExecutionPolicy ) {
-    
-        # Requires that all scripts and configuration files be signed by a trusted publisher, including scripts that you write on the local computer.
-        'AllSigned' { $true }
-
-        # Nothing is blocked and there are no warnings or prompts.
-        'Bypass' { $false }
-
-        'Default' {
-        
-            [bool]$ServerOS = Get-WmiObject -Query 'SELECT ProductType FROM Win32_OperatingSystem WHERE ProductType > 1'
-
-            return __SignatureRequired $Path ( 'Restricted', 'RemoteSigned' )[ $ServerOS ]
-        
-        }
-
-        'RemoteSigned' {
-        
-            # if the file is downloaded then we will require a signature
-            if ( [bool]( Get-Item $Path -Stream * | Where-Object { $_.Stream -eq 'Zone.Identifier' } ) ) { return $true }
-
-            # otherwise we check if the file is on a UNC path
-            $Uri = $null
-            if ( [System.Uri]::TryCreate( $Path, [System.UriKind]::Absolute, ( [ref]$Uri ) ) -and $Uri.IsUnc ) { return $true }
-
-            # in other cases return false
-            return $false
-        
-        }
-
-        'Restricted' {
-
-            throw 'Scripts are not allowed when execution policy is Restricted'
-
-        }
-
-        'Undefined' {
-
-            throw 'Scripts are not allowed when execution policy is Undefined'
-
-        }
-
-        'Unrestricted' { $false }
-
-        default { $true }
-    
-    }
-
-}
-
 
 # .ExternalHelp BW.Utils.PSCron-help.xml
 function Get-PSCronDate {
@@ -240,6 +154,12 @@ function Invoke-PSCronJob {
         [string]
         $WorkingDirectory,
 
+        [hashtable]
+        $Parameters,
+
+        [object[]]
+        $Arguments,
+
         [string]
         $LogPath,
 
@@ -376,6 +296,28 @@ function Invoke-PSCronJob {
     
     # add the script
     $PowerShell.AddScript( $CronJob.Definition, $true ) > $null
+
+    # add any parameters
+    if ( $Parameters.Count -gt 0 ) {
+
+        $Parameters.Keys | ForEach-Object {
+
+            $PowerShell.AddParameter( $_, $Parameters[$_] ) > $null
+
+        }
+
+    }
+
+    # add any arguments
+    if ( $Arguments.Count -gt 0 ) {
+
+        $Arguments | ForEach-Object {
+
+            $PowerShell.AddArgument( $_ ) > $null
+
+        }
+        
+    }
 
     # collection for output
     # note: input cannot be assigned directly to the PSCronJobObject.Output property
