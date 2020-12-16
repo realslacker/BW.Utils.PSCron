@@ -2,6 +2,7 @@ using namespace System.IO
 using namespace System.Collections
 using namespace System.Management.Automation
 using namespace Microsoft.PowerShell
+using module '.\PSCronDateTime.psm1'
 
 class PSCronJobObject {
 
@@ -9,6 +10,7 @@ class PSCronJobObject {
     [string]$Name
     [string]$Description
     [string]$Source
+    [string[]]$IncludeScripts
     hidden [System.IO.FileInfo]$__FilePath
     hidden [ExecutionPolicy]$__ExecutionPolicy = ( Get-ExecutionPolicy )
     [scriptblock]$Definition

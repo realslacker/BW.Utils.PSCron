@@ -1,6 +1,8 @@
 ﻿using namespace System.Management.Automation
 using namespace System.Collections
 using namespace Microsoft.PowerShell
+using module '.\classes\PSCronDateTime.psm1'
+using module '.\classes\PSCronJobObject.psm1'
 
 $__ScriptPath = Split-Path (Get-Variable MyInvocation -Scope Script).Value.Mycommand.Definition -Parent
 
@@ -81,7 +83,15 @@ function Get-PSCronNextRun {
 
     $ReferenceDate = $ReferenceDate + $Offset
 
-    $CronSchedule = [Cronos.CronExpression]::Parse( $Schedule )
+    try {
+
+        $CronSchedule = [Cronos.CronExpression]::Parse( $Schedule )
+
+    } catch {
+
+        throw $_
+
+    }
     
     [PSCronDateTime]$NextRun = $CronSchedule.GetNextOccurrence( $ReferenceDate.Utc, [System.TimeZoneInfo]::Utc, $Inclusive )
 
@@ -147,6 +157,9 @@ function Invoke-PSCronJob {
         [Parameter( Mandatory, ParameterSetName='File' )]
         [string]
         $FilePath,
+
+        [string[]]
+        $IncludeScripts,
 
         [string]
         $Description,
@@ -293,6 +306,20 @@ function Invoke-PSCronJob {
     # add the init script
     $InitScript = [scriptblock]::Create( ( $StreamPreferences | Out-String ) )
     $PowerShell.AddScript( $InitScript, $true ) > $null
+
+    # if we are prepending scripts we do that now
+    Resolve-Path -Path $IncludeScripts -ErrorAction SilentlyContinue |
+        Where-Object { Test-Path -Path $_ -PathType Leaf } |
+        ForEach-Object {
+
+            if ( $IncludeContent = Get-Content $_ -ErrorAction SilentlyContinue | Out-String ) {
+
+                $IncludeScript = [scriptblock]::Create( $IncludeContent )
+                $PowerShell.AddScript( $IncludeScript, $true ) > $null
+
+            }
+
+        }
     
     # add the script
     $PowerShell.AddScript( $CronJob.Definition, $true ) > $null

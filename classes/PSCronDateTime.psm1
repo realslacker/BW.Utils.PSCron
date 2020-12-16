@@ -1,3 +1,11 @@
+enum PSCronTicks {
+    Millisecond
+    Second
+    Minute
+    Hour
+    Day
+}
+
 class PSCronDateTime : System.IComparable {
 
     [datetime]$Local
